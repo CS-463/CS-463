@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.cover
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# Jupyter / notebook outputs (optional: uncomment to ignore large embedded outputs)
+# *.nbconvert.ipynb
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# LaTeX / docs build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# PDF export temp files
+Course_Documents/.chrome-pdf-profile/
+Course_Documents/CS_463_Syllabus.html
+
+# Data and model artifacts (common in ML courses)
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.parquet
+*.feather
+
+# Kaggle / competition downloads (keep notebooks and scripts tracked)
+data/raw/
+data/processed/
+*.csv.gz
+*.zip
+*.7z
