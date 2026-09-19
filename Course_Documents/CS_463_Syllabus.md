@@ -76,7 +76,7 @@ Your weighted percentage is rounded to the nearest whole percent before conversi
 
 ## Learning Checks — 10%
 
-At the start of most class sessions you'll complete a short check on material from the previous session. In-person checks are handwritten with devices put away; Friday checks are delivered through Canvas.
+At the start of most class sessions you'll complete a short check on material from the previous session. The Checks are delivered through Canvas, so bring a laptop on Monday and Wednesday, or let me know ahead of class if you'll need to borrow one. If you borrow one, make sure you know how to log into Canvas on it. The learning checks are closed book, closed note, and no consulting LLMs, etc. 
 
 **Each check is worth 10 points.** The format varies — sometimes ten quick one-point questions, sometimes five two-point questions, sometimes two longer five-point questions.
 
@@ -108,20 +108,9 @@ AI-coding assistants are allowed for working on labs. You're going to talk about
 
 ## Perspectives — 10%
 
-**Six times during the quarter** I'll assign a short set of readings on a topic related to AI — usually two pieces taking opposing positions, though some topics are better served by a single reading. The readings and the writing prompt go out Monday, and we discuss them for about 20 minutes on Friday before the lab. Not every week has a Perspectives assignment. See the calendar above for dates.
+**Six times during the quarter** I'll assign a short set of readings on a topic related to AI. The readings and the writing prompt go out Monday, and we discuss them for about 20 minutes on Friday before the lab. Not every week has a Perspectives assignment. See the calendar above for dates.
 
-Submit your response by **Thursday at 11:59 PM**, the night before we discuss the readings in class. Each response is graded on a 10-point scale. **The specific prompt and expected length are posted with each assignment in Canvas**, and the Canvas prompt always governs.
-
-Most of the time the prompt will be some variation on the default form of the assignment: a response of roughly 250 words that includes
-
-- a concise summary of your position, with supporting arguments as you see fit;
-- the strongest argument against your position — not a weak version you can easily knock down, but something from one of the readings or an even stronger variation you thought of; and
-- what evidence you would need to see to change your mind, and why.
-
-Some topics call for something different — a bespoke prompt, a different structure, a shorter or longer response. When that happens, I'll say so in the assignment.
-
-
-You're graded on whether you engaged seriously, not on which position you take. 
+Submit your response by **Thursday at 11:59 PM**, the night before we discuss the readings in class. Each response is graded on a 10-point scale.
 
 **On using LLMs:** You can use LLMs to help form your ideas, do research, find sources, or stress-test your reasoning. But the essay you submit must be your own, original writing. Submitting text you did not write as your own work is plagiarism under the college's academic integrity policy — see the Academic Integrity section at the end of this document.
 
