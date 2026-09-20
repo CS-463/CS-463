@@ -23,14 +23,14 @@
 | Week | Dates | Topic | Reading | Lab / Activity | Major events |
 |---|---|---|---|---|---|
 | 1 | Sep 21, 23, 25 | ML-Landscape: Major paradigms. Notation intro. | Ch. 1; §2.1–2.2 | Lab 1 — Python and notebook fluency | Course intro; Environment setup and tooling intro Fri |
-| 2 | Sep 28, 30, Oct 2 | Linear regression | §3.1–3.3, §3.5 | Lab 2 — Linear regression<br>**Perspectives 1 due Thu Oct 1** | |
-| 3 | Oct 5, 7 | Classification and its metrics | §4.1–4.3 | — | **No class Fri Oct 9** |
-| 4 | Oct 12, 14, 16 | Bayes; gradient descent | §4.4–4.5; §10.7 (opening) | Lab 3 — Gradient descent<br>**Perspectives 2 due Thu Oct 15** |  |
-| 5 | Oct 19, 21, 23 | Cross-Validation; Bootstrap | Ch. 5 | Lab 4 — Cross-validation and the bootstrap<br>**Perspectives 3 due Thu Oct 22** |  **Kaggle Programming Project released** |
+| 2 | Sep 28, 30, Oct 2 | Linear regression | §3.1–3.3, §3.5 | Lab 2 — Linear regression<br>**Perspectives 1 due Mon Sep 28** | |
+| 3 | Oct 5, 7 | Classification and its metrics | §4.1–4.3 | **Perspectives 2 due Mon Oct 5** | **No class Fri Oct 9** |
+| 4 | Oct 12, 14, 16 | Bayes; gradient descent | §4.4–4.5; §10.7 (opening) | Lab 3 — Gradient descent<br>**Perspectives 3 due Mon Oct 12** |  |
+| 5 | Oct 19, 21, 23 | Cross-Validation; Bootstrap | Ch. 5 | Lab 4 — Cross-validation and the bootstrap<br>**Perspectives 4 due Mon Oct 19** |  **Kaggle Programming Project released** |
 | 6 | Oct 26, 28 | Regularization; linear model selection; PCA Intro | §6.1–6.2, §6.3.1, §6.4 | — | **Midterm — Wed Oct 28**; no class Fri Oct 30 |
-| 7 | Nov 2, 4, 6 | Trees and ensembles | Ch. 8 | Lab 5 — Tree-based methods<br>**Perspectives 4 due Thu Nov 5** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
-| 8 | Nov 9, 13 | Unsupervised learning: PCA and clustering | §12.1–12.2, §12.4 | Lab 6 — PCA and clustering<br>**Perspectives 5 due Thu Nov 12** | **No class Wed Nov 11** (Veterans Day) |
-| 9 | Nov 16, 18, 20 | Neural networks | §10.1–10.2, §10.6–10.7 | Lab 7 — Train and diagnose a network<br>**Perspectives 6 due Thu Nov 19** |  **Kaggle Programming Project checkpoint 2** |
+| 7 | Nov 2, 4, 6 | Trees and ensembles | Ch. 8 | Lab 5 — Tree-based methods<br>**Perspectives 5 due Mon Nov 2** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
+| 8 | Nov 9, 13 | Unsupervised learning: PCA and clustering | §12.1–12.2, §12.4 | Lab 6 — PCA and clustering | **No class Wed Nov 11** (Veterans Day) |
+| 9 | Nov 16, 18, 20 | Neural networks | §10.1–10.2, §10.6–10.7 | Lab 7 — Train and diagnose a network<br>**Perspectives 6 due Mon Nov 16** |  **Kaggle Programming Project checkpoint 2** |
 | 10 | Nov 23 | Embeddings, retrieval, and recommenders | §10.4, §12.3 | — | Monday only; **no class Nov 25, 27** (Thanksgiving) |
 | 11 | Nov 30, Dec 2, 4 | Double descent; LLM tour | §10.8 | — | **Kaggle Programming Project due Wed Dec 2**; **project defenses Fri Dec 4** |
 | — | Wed Dec 9 | **Final exam** (cumulative) | | | Finals week |
@@ -108,9 +108,9 @@ AI-coding assistants are allowed for working on labs. You're going to talk about
 
 ## Perspectives — 10%
 
-**Six times during the quarter** I'll assign a short set of readings on a topic related to AI. The readings and the writing prompt go out Monday, and we discuss them for about 20 minutes on Friday before the lab. Not every week has a Perspectives assignment. See the calendar above for dates.
+**Six times during the quarter** I'll assign a short set of readings on a topic related to AI. The readings and the writing prompt go out on a Tuesday, and we discuss them for about 20 minutes on Wednesday the following week. Not every week has a Perspectives assignment. See the calendar above for dates.
 
-Submit your response by **Thursday at 11:59 PM**, the night before we discuss the readings in class. Each response is graded on a 10-point scale.
+Submit your response by **Monday at 11:59 PM**, two nights before we discuss the readings in class. Each response is graded on a 10-point scale.
 
 **On using LLMs:** You can use LLMs to help form your ideas, do research, find sources, or stress-test your reasoning. But the essay you submit must be your own, original writing. Submitting text you did not write as your own work is plagiarism under the college's academic integrity policy — see the Academic Integrity section at the end of this document.
 
