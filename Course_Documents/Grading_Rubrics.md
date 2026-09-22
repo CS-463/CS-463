@@ -40,7 +40,24 @@ Until I do, Canvas shows those points as zero. **Your score isn't final until th
 **Coming Soon**
 
 ## Perspectives 
-**Coming Soon**
+
+Each of these assignments is graded on a 10 pt scale. Each assignment contains a writing prompt. 
+
+Each writing prompt usually contains a list of my desiderata for the essay. 
+I will typically give you a point break down for each item in that list. If I don't, just assume each item carries approximately equal point-value, summing to 10 pts.
+
+These assignments are never graded on the basis of your opinion or your position. They *are* graded on the basis of:
+
+- Compliance with the writing prompt (including essay-length specs).
+- The accuracy of your claims about the content of the readings.
+- The quality of your arguments.
+
+**AI-Policy for Perspectives:** 
+
+You may use LLM's to assist with your research, stress-test your ideas, explore alternatives, etc. **Do not** ask an LLM to write the essay for you. Another way LLM's can be genuinely useful here is if you encounter formulas, mathematical expressions, symbols or even technical jargon you've never seen before. It used to be tricky to learn what some mathematical symbol or expression meant. What keyword do you even search? How do you type $\psi$ on a keyboard? Now you can just screen shot the whole expression or equation, paste it into a Claude chat and ask, "what does this expression mean?". I would consider that kind of AI usage cleanly in-bounds for Perspectives writing assignments.
+
+*Cognitive Autonomy Tip:* Tempting as it is to just ask Claude "Please summarize this article", I highly recommend that you don't to do this. If you really think reading an LLM's summary would be valuable for some particular article or research paper, try to wait *at least* until you've read the article yourself and drafted *your own* summary. Now you can compare and contrast your summaries. You will learn more this way, I promise!
+
 
 ## Kaggle Programming Project
 **Coming Soon**
