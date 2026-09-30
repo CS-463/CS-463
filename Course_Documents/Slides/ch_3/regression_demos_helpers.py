@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from matplotlib.pyplot import subplots
 from plotly.subplots import make_subplots
-from scipy.stats import linregress, t as t_dist
+from scipy.stats import linregress, norm, t as t_dist
 
 
 def pick_spread_points(df, x='TV', n=3, low=0.1, high=0.9):
@@ -407,13 +407,20 @@ def plot_r2_histogram(r2, marks=(), reference=None, shade_above=None, ax=None):
     return ax
 
 
-def _draw_sample(ax, xs, ys, df, x, y, title):
-    """A sample's points and least squares line, drawn over all of df in light gray."""
+def _draw_sample(ax, xs, ys, df, x, y, title, show_full_line=False):
+    """A sample's points and least squares line, drawn over all of df in light gray.
+
+    If show_full_line, also draw the least squares line through all of df (dashed gray).
+    """
     m, b = fit_line(xs, ys)
     full = np.linspace(df[x].min(), df[x].max(), 100)
     ax.scatter(df[x], df[y], s=10, color='lightgray')
     ax.scatter(xs, ys, s=60, color='black', zorder=3)
-    ax.plot(full, m * full + b, color='C0', linewidth=2)
+    if show_full_line:
+        m_all, b_all = fit_line(df[x], df[y])
+        ax.plot(full, m_all * full + b_all, color='gray', linestyle='--', linewidth=1.5,
+                label='line through all the data')
+    ax.plot(full, m * full + b, color='C0', linewidth=2, label='line through this sample')
     ax.set_ylim(df[y].min() - 2, df[y].max() + 2)
     ax.set_xlabel(x)
     ax.set_ylabel(y)
@@ -421,17 +428,26 @@ def _draw_sample(ax, xs, ys, df, x, y, title):
 
 
 def plot_sample_luck(df, n=3, draws=1000, x='TV', y='sales', seed=463):
-    """Six random n-row samples: five spanning the range of R², then one more at random."""
+    """Six random n-row samples: five spanning the range of R², then a misleading one.
+
+    The sixth is the highest-R² sample whose line slopes the opposite way from the line
+    through all of df: a near-perfect fit to the sample that badly misrepresents the trend.
+    """
     samples, r2 = sample_r2(df, n, draws, x, y, seed)
     order = np.argsort(r2)
     picks = list(order[np.round(np.linspace(0, draws - 1, 5)).astype(int)])
-    picks.append(next(i for i in range(draws) if i not in picks))   # draws are already random
+    m_all, _ = fit_line(df[x], df[y])
+    slopes = np.array([fit_line(s[x], s[y])[0] for s in samples])
+    wrong_way = np.flatnonzero(np.sign(slopes) != np.sign(m_all))
+    picks.append(wrong_way[np.argmax(r2[wrong_way])])
 
     fig, axes = subplots(2, 3, figsize=(15, 9))
     for k, (ax, i) in enumerate(zip(axes.flat, picks)):
         s = samples[i]
         _draw_sample(ax, s[x], s[y], df, x, y,
-                     f'{"Another random sample:  " if k == 5 else ""}R² = {r2[i]:.2f}')
+                     f'{"High R², wrong direction:  " if k == 5 else ""}R² = {r2[i]:.2f}',
+                     show_full_line=True)
+    axes.flat[0].legend(fontsize=9, loc='upper left')
     fig.tight_layout()
     return fig
 
@@ -525,6 +541,45 @@ def _animation_controls(shown, prefix):
         sliders=[dict(active=0, steps=steps, x=0.1, len=0.9, y=0, yanchor='top',
                       pad=dict(t=50), currentvalue=dict(prefix=prefix))],
     )
+
+
+def plot_sd_pictures():
+    """Two panels: bell curves with the same mean and different SDs, then the 68–95 rule."""
+    fig, (left, right) = subplots(1, 2, figsize=(15, 4.8))
+
+    grid = np.linspace(-10, 10, 400)
+    for sd, color in [(1, 'C0'), (3, 'C1')]:
+        height = norm.pdf(0, scale=sd)
+        left.plot(grid, norm.pdf(grid, scale=sd), color=color, linewidth=2, label=f'SD = {sd}')
+        left.annotate('', xy=(sd, height * 0.6), xytext=(0, height * 0.6),
+                      arrowprops=dict(arrowstyle='->', color=color, linewidth=2))
+        left.text(sd + 0.8, height * 0.6, f'1 SD = {sd}', color=color,
+                  ha='left', va='center', fontsize=10)
+    left.axvline(0, color='gray', linestyle='--', linewidth=1)
+    left.set_yticks([])
+    left.set_xlabel('value')
+    left.set_title('Same mean (0), different SDs: the SD is the typical distance from the mean')
+    left.legend(fontsize=9)
+
+    z = np.linspace(-3.5, 3.5, 400)
+    right.plot(z, norm.pdf(z), color='black', linewidth=2)
+    for k, alpha in [(2, 0.2), (1, 0.35)]:
+        inside = np.abs(z) <= k
+        right.fill_between(z[inside], norm.pdf(z[inside]), color='C0', alpha=alpha)
+    right.annotate('', xy=(-1, 0.18), xytext=(1, 0.18),
+                   arrowprops=dict(arrowstyle='<->', linewidth=1.5))
+    right.text(0, 0.19, 'about 68%\n(within 1 SD)', ha='center', va='bottom', fontsize=10)
+    right.annotate('', xy=(-2, 0.03), xytext=(2, 0.03),
+                   arrowprops=dict(arrowstyle='<->', linewidth=1.5))
+    right.text(0, 0.04, 'about 95% (within 2 SD)', ha='center', va='bottom', fontsize=10)
+    right.set_xticks([-3, -2, -1, 0, 1, 2, 3])
+    right.set_xticklabels(['mean\n− 3 SD', 'mean\n− 2 SD', 'mean\n− 1 SD', 'mean',
+                           'mean\n+ 1 SD', 'mean\n+ 2 SD', 'mean\n+ 3 SD'])
+    right.set_yticks([])
+    right.set_title('For a bell-shaped (normal) histogram')
+
+    fig.tight_layout()
+    return fig
 
 
 def make_truth(df, n=30, x='TV', y='sales', seed=463):
@@ -644,17 +699,18 @@ def plot_slope_histogram(slopes, true_slope, one_se=None, ax=None):
     sd = slopes.std(ddof=1)
     if ax is None:
         _, ax = subplots(figsize=(8, 5))
-    ax.hist(slopes, bins=30, color='C0', alpha=0.7)
+    counts, _, _ = ax.hist(slopes, bins=30, color='C0', alpha=0.7)
     ax.axvline(true_slope, color='black', linestyle='--', label=f'true slope = {true_slope:.4f}')
     ax.axvspan(true_slope - sd, true_slope + sd, color='C0', alpha=0.15,
-               label=f'±1 SD of the estimates ({sd:.4f})')
+               label=f'±1 SE, measured: SD of all {len(slopes)} estimates ({sd:.4f})')
     if one_se is not None:
-        ax.errorbar(true_slope, ax.get_ylim()[1] * 0.9, xerr=one_se, color='C1', capsize=8,
-                    linewidth=3, label=f'±1 SE from sample 1 alone ({one_se:.4f})')
+        ax.errorbar(true_slope, counts.max() * 1.1, xerr=one_se, color='C1', capsize=8,
+                    linewidth=3, label=f'±1 SE, estimated from sample 1 alone ({one_se:.4f})')
+        ax.set_ylim(0, counts.max() * 1.2)
     ax.set_xlabel('slope estimate')
     ax.set_ylabel(f'count out of {len(slopes)} samples')
     ax.set_title(f'{len(slopes)} slope estimates: mean {slopes.mean():.4f}, SD {sd:.4f}')
-    ax.legend(fontsize=9, loc='upper left')
+    ax.legend(fontsize=9, loc='upper center', bbox_to_anchor=(0.5, -0.15))
     return ax
 
 
