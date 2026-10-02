@@ -138,7 +138,7 @@ installed packages into the wrong environment, it's usually faster to delete the
 build a fresh one than to repair it. Your notebooks and other files aren't affected: they live in
 your course folder, not in the environment.
 
-**conda.** Close VS Code, Cursor, or Jupyter first, so nothing is using the environment. Then, in
+**Conda instructions:** Close VS Code, Cursor, or Jupyter first, so nothing is using the environment. Then, in
 the Miniforge or Anaconda Prompt:
 
 ```bash
@@ -149,9 +149,9 @@ conda env remove -n CS_463
 
 `conda env list` shows your environments. If yours has a different name (like `cs_463`), use that
 name in the `remove` command. Then get the latest
-[`cs_463_environment.yml`](cs_463_environment.yml) and follow Option 1 from step 2.
+[`cs_463_environment.yml`](cs_463_environment.yml) and follow Option 1 starting at step 2, above.
 
-**venv.** Close your editor, delete the `CS_463` folder, and follow Option 2 again.
+**Venv Instructions:** Close your editor, delete the `CS_463` folder, and follow Option 2 again.
 
 After rebuilding, run the [check](#check-your-setup), reopen your notebook, select the kernel
 again, and restart it. If the old environment still shows up in the kernel list, reload the editor
