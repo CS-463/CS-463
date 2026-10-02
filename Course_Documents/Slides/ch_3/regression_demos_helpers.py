@@ -7,7 +7,10 @@ e.g. {'Line A': (0.1, 3.0)}.
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib.pyplot import subplots
+from matplotlib.ticker import MaxNLocator
 from plotly.subplots import make_subplots
 from scipy.stats import linregress, norm, t as t_dist
 
@@ -730,6 +733,58 @@ def plot_intervals(fits, true_slope, k=50, ax=None):
     ax.set_ylabel('sample')
     ax.set_title(f'Slope ± 2 SE for {len(fits)} samples: {covers.sum()} contain the true slope')
     ax.legend(fontsize=9, loc='upper right')
+    return ax
+
+
+def plot_se_ruler(rows, ax=None):
+    """Each estimate on its own ruler: SE steps from 0 above the line, slope units below it.
+
+    rows: list of (label, estimate, se), drawn top to bottom. The SE ticks are spaced differently
+    on each ruler; the orange slope ticks line up across all of them. The gray band is ±2 SE around 0.
+    """
+    reach = 1.15 * max(abs(est) + se for _, est, se in rows)
+    slope_ticks = MaxNLocator(nbins=8).tick_values(-reach, reach)
+    slope_ticks = slope_ticks[np.abs(slope_ticks) <= reach]
+    if ax is None:
+        _, ax = subplots(figsize=(10, 1.5 * len(rows) + 1))
+    for y, (label, est, se) in zip(range(len(rows) - 1, -1, -1), rows):
+        ax.fill_between([-2 * se, 2 * se], y - 0.1, y + 0.1, color='gray', alpha=0.2, linewidth=0)
+        ax.plot([-reach, reach], [y, y], color='gray', linewidth=0.8)
+
+        steps = np.arange(-np.floor(reach / se), np.floor(reach / se) + 1)
+        ax.vlines(steps * se, y, y + 0.1, color='gray')
+        for k in steps[steps != 0]:
+            ax.text(k * se, y + 0.13, f'{k:.0f} SE', ha='center', va='bottom', fontsize=8, color='gray')
+
+        ax.vlines(slope_ticks, y - 0.1, y, color='C1')
+        for v in slope_ticks[slope_ticks != 0]:
+            ax.text(v, y - 0.13, f'{v:g}', ha='center', va='top', fontsize=8, color='C1')
+
+        ax.annotate('', xy=(est, y), xytext=(0, y),
+                    arrowprops=dict(arrowstyle='->', color='C0', linewidth=2))
+        ax.plot(est, y, 'o', color='C0', markersize=8)
+        ax.text(1.03 * reach, y, f't = {est:g} ÷ {se:g}\n   = {est / se:.1f} SEs',
+                va='center', color='C0', fontweight='bold')
+    ax.axvline(0, color='black', linewidth=1.5)
+    ax.text(0, len(rows) - 0.45, 'no effect (slope 0)', ha='center',
+            bbox=dict(facecolor='white', edgecolor='none'))
+
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels([f'{label}: slope {est:g}, SE {se:g}' for label, est, se in reversed(rows)])
+    ax.set_ylim(-0.5, len(rows) - 0.3)
+    ax.set_xlim(-reach, reach)
+    ax.set_xticks([])
+    ax.set_title('t = how many SE-sized steps from 0 to the estimate')
+    for side in ('top', 'right', 'left', 'bottom'):
+        ax.spines[side].set_visible(False)
+    ax.tick_params(axis='y', length=0)
+    ax.legend(handles=[Line2D([], [], color='gray', marker='|', linestyle='', markersize=10,
+                              label='above each line: steps of 1 SE (spacing differs per ruler)'),
+                       Line2D([], [], color='C1', marker='|', linestyle='', markersize=10,
+                              label='below each line: slope units (the same on every ruler)'),
+                       Patch(color='gray', alpha=0.2,
+                             label='within ±2 SE of 0: a typical bounce if there were no effect')],
+              fontsize=9, loc='upper center', bbox_to_anchor=(0.5, 0), frameon=False)
     return ax
 
 
