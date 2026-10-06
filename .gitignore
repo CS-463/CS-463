@@ -83,3 +83,8 @@ data/processed/
 *.csv.gz
 *.zip
 *.7z
+
+# Any directory that starts with "submissions"
+submissions/
+
+

@@ -54,7 +54,7 @@ CS_463\Scripts\Activate.ps1
 Then, on any OS:
 
 ```bash
-pip install numpy "pandas<3" scipy matplotlib scikit-learn statsmodels plotly nbformat ipykernel jupyter lxml joblib lifelines pygam
+pip install numpy "pandas<3" scipy matplotlib scikit-learn statsmodels plotly nbformat ipykernel ipywidgets jupyter lxml joblib lifelines pygam
 pip install --no-deps ISLP
 ```
 

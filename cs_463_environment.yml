@@ -16,6 +16,7 @@ dependencies:
   - plotly
   - nbformat
   - ipykernel
+  - ipywidgets
   - jupyter
   # ISLP's remaining dependencies
   - lxml
