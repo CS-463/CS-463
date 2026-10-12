@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 650" width="760" height="650" role="img" aria-label="Exact counting versus naive counting as features are added" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<rect x="0" y="0" width="760" height="650" fill="#ffffff"/>
+<text x="40" y="34" font-size="15" font-weight="600" fill="#1f1f1f" text-anchor="start">Exact Bayes counts one shrinking cell; naive Bayes counts one feature at a time</text>
+<text x="40" y="56" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">The same 20 defaulters in both rows. Shaded: the customers that get counted.</text>
+<text x="40" y="88" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="start">Exact: count the one cell that matches every feature</text>
+<text x="115" y="112" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Missed payment</text>
+<text x="115" y="128" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">1 feature, 2 cells</text>
+<rect x="40" y="136" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="40" y="136" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M115 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="52.5" cy="154.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="154.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="154.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="192.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="192.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="192.2" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="154.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="154.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="192.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="192.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="267.2" r="5" fill="#5f5e5a"/>
+<text x="115" y="312" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 12 of 20</text>
+<text x="305" y="112" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ High balance</text>
+<text x="305" y="128" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">2 features, 4 cells</text>
+<rect x="230" y="136" width="75" height="75" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="230" y="136" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M305 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M230 211H380" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="242.5" cy="148.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="148.5" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="148.5" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="173.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="173.5" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="173.5" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="198.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="198.5" r="5" fill="#5f5e5a"/>
+<circle cx="248.8" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="286.2" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="248.8" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="286.2" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="323.8" cy="173.5" r="5" fill="#5f5e5a"/>
+<circle cx="361.2" cy="173.5" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="229.8" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="267.2" r="5" fill="#5f5e5a"/>
+<text x="305" y="312" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 8 of 20</text>
+<text x="495" y="112" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Renter</text>
+<text x="495" y="128" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">3 features, 8 cells</text>
+<rect x="420" y="136" width="37.5" height="75" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="420" y="136" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M495 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M420 211H570" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M457.5 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M532.5 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="429.4" cy="154.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="448.1" cy="154.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="429.4" cy="192.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="148.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="148.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="173.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="173.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="198.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="438.8" cy="248.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="229.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="229.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="267.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="154.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="192.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="229.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="267.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="541.9" cy="229.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="560.6" cy="229.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="541.9" cy="267.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="560.6" cy="267.2" r="4.5" fill="#5f5e5a"/>
+<text x="495" y="312" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 3 of 20</text>
+<text x="685" y="112" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Under 30</text>
+<text x="685" y="128" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">4 features, 16 cells</text>
+<rect x="610" y="136" width="37.5" height="37.5" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="610" y="136" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M685 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 211H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M647.5 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M722.5 136V286" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 173.5H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 248.5H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="619.4" cy="182.9" r="4" fill="#5f5e5a"/>
+<circle cx="638.1" cy="182.9" r="4" fill="#5f5e5a"/>
+<circle cx="619.4" cy="201.6" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="154.8" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="154.8" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="182.9" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="182.9" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="201.6" r="4" fill="#5f5e5a"/>
+<circle cx="628.8" cy="229.8" r="4" fill="#5f5e5a"/>
+<circle cx="666.2" cy="229.8" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="267.2" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="267.2" r="4" fill="#5f5e5a"/>
+<circle cx="703.8" cy="154.8" r="4" fill="#5f5e5a"/>
+<circle cx="703.8" cy="192.2" r="4" fill="#5f5e5a"/>
+<circle cx="694.4" cy="267.2" r="4" fill="#5f5e5a"/>
+<circle cx="713.1" cy="267.2" r="4" fill="#5f5e5a"/>
+<circle cx="741.2" cy="229.8" r="4" fill="#5f5e5a"/>
+<circle cx="731.9" cy="257.9" r="4" fill="#5f5e5a"/>
+<circle cx="750.6" cy="257.9" r="4" fill="#5f5e5a"/>
+<circle cx="731.9" cy="276.6" r="4" fill="#5f5e5a"/>
+<text x="685" y="312" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 0 of 20</text>
+<text x="40" y="362" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="start">Naive: count each feature on its own, using all 20 defaulters</text>
+<text x="115" y="386" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">Missed payment</text>
+<text x="115" y="402" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">this feature only, 2 groups</text>
+<rect x="40" y="410" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="40" y="410" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M115 410V560" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="52.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="541.2" r="5" fill="#5f5e5a"/>
+<text x="115" y="586" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Has it: 12 of 20</text>
+<text x="305" y="386" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">High balance</text>
+<text x="305" y="402" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">this feature only, 2 groups</text>
+<rect x="230" y="410" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="230" y="410" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M305 410V560" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="242.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<text x="305" y="586" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Has it: 10 of 20</text>
+<text x="495" y="386" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">Renter</text>
+<text x="495" y="402" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">this feature only, 2 groups</text>
+<rect x="420" y="410" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="420" y="410" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M495 410V560" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="438.8" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="476.2" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="438.8" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="476.2" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="438.8" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="476.2" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="438.8" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="476.2" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="507.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="532.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="557.5" cy="428.8" r="5" fill="#5f5e5a"/>
+<circle cx="507.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="532.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="557.5" cy="466.2" r="5" fill="#5f5e5a"/>
+<circle cx="507.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="532.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="557.5" cy="503.8" r="5" fill="#5f5e5a"/>
+<circle cx="507.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="532.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<circle cx="557.5" cy="541.2" r="5" fill="#5f5e5a"/>
+<text x="495" y="586" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Has it: 8 of 20</text>
+<text x="685" y="386" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">Under 30</text>
+<text x="685" y="402" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">this feature only, 2 groups</text>
+<rect x="610" y="410" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="610" y="410" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M685 410V560" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="628.8" cy="435" r="5" fill="#5f5e5a"/>
+<circle cx="666.2" cy="435" r="5" fill="#5f5e5a"/>
+<circle cx="628.8" cy="485" r="5" fill="#5f5e5a"/>
+<circle cx="666.2" cy="485" r="5" fill="#5f5e5a"/>
+<circle cx="628.8" cy="535" r="5" fill="#5f5e5a"/>
+<circle cx="666.2" cy="535" r="5" fill="#5f5e5a"/>
+<circle cx="697.5" cy="425" r="5" fill="#5f5e5a"/>
+<circle cx="722.5" cy="425" r="5" fill="#5f5e5a"/>
+<circle cx="747.5" cy="425" r="5" fill="#5f5e5a"/>
+<circle cx="697.5" cy="455" r="5" fill="#5f5e5a"/>
+<circle cx="722.5" cy="455" r="5" fill="#5f5e5a"/>
+<circle cx="747.5" cy="455" r="5" fill="#5f5e5a"/>
+<circle cx="697.5" cy="485" r="5" fill="#5f5e5a"/>
+<circle cx="722.5" cy="485" r="5" fill="#5f5e5a"/>
+<circle cx="747.5" cy="485" r="5" fill="#5f5e5a"/>
+<circle cx="697.5" cy="515" r="5" fill="#5f5e5a"/>
+<circle cx="722.5" cy="515" r="5" fill="#5f5e5a"/>
+<circle cx="747.5" cy="515" r="5" fill="#5f5e5a"/>
+<circle cx="697.5" cy="545" r="5" fill="#5f5e5a"/>
+<circle cx="722.5" cy="545" r="5" fill="#5f5e5a"/>
+<text x="685" y="586" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Has it: 6 of 20</text>
+<text x="40" y="626" font-size="11.5" font-weight="400" fill="#1f1f1f" text-anchor="start">With all four features. Exact: 0 of 20. Naive: 0.60 &#215; 0.50 &#215; 0.40 &#215; 0.30 &#8776; 0.036, about 0.7 of a defaulter out of 20.</text>
+</svg>

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 312" width="760" height="312" role="img" aria-label="Defaulters split into more cells as features are added" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<rect x="0" y="0" width="760" height="312" fill="#ffffff"/>
+<text x="40" y="34" font-size="15" font-weight="600" fill="#1f1f1f" text-anchor="start">Each new feature splits every cell in two</text>
+<text x="40" y="56" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">The 20 defaulters. Shaded: the cell that matches the new customer.</text>
+<text x="115" y="82" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Missed payment</text>
+<text x="115" y="98" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">1 feature, 2 cells</text>
+<rect x="40" y="110" width="75" height="150" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="40" y="110" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M115 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="52.5" cy="128.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="128.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="128.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="166.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="166.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="166.2" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="52.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="77.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="102.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="128.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="128.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="166.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="166.2" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="133.8" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="171.2" cy="241.2" r="5" fill="#5f5e5a"/>
+<text x="115" y="288" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 12 of 20</text>
+<text x="305" y="82" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ High balance</text>
+<text x="305" y="98" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">2 features, 4 cells</text>
+<rect x="230" y="110" width="75" height="75" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="230" y="110" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M305 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M230 185H380" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="242.5" cy="122.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="122.5" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="122.5" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="147.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="147.5" r="5" fill="#5f5e5a"/>
+<circle cx="292.5" cy="147.5" r="5" fill="#5f5e5a"/>
+<circle cx="242.5" cy="172.5" r="5" fill="#5f5e5a"/>
+<circle cx="267.5" cy="172.5" r="5" fill="#5f5e5a"/>
+<circle cx="248.8" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="286.2" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="248.8" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="286.2" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="323.8" cy="147.5" r="5" fill="#5f5e5a"/>
+<circle cx="361.2" cy="147.5" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="203.8" r="5" fill="#5f5e5a"/>
+<circle cx="317.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="342.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<circle cx="367.5" cy="241.2" r="5" fill="#5f5e5a"/>
+<text x="305" y="288" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 8 of 20</text>
+<text x="495" y="82" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Renter</text>
+<text x="495" y="98" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">3 features, 8 cells</text>
+<rect x="420" y="110" width="37.5" height="75" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="420" y="110" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M495 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M420 185H570" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M457.5 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M532.5 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="429.4" cy="128.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="448.1" cy="128.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="429.4" cy="166.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="122.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="122.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="147.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="147.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="172.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="438.8" cy="222.5" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="203.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="485.6" cy="203.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="466.9" cy="241.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="128.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="166.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="203.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="513.8" cy="241.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="541.9" cy="203.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="560.6" cy="203.8" r="4.5" fill="#5f5e5a"/>
+<circle cx="541.9" cy="241.2" r="4.5" fill="#5f5e5a"/>
+<circle cx="560.6" cy="241.2" r="4.5" fill="#5f5e5a"/>
+<text x="495" y="288" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 3 of 20</text>
+<text x="685" y="82" font-size="13" font-weight="600" fill="#1f1f1f" text-anchor="middle">+ Under 30</text>
+<text x="685" y="98" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="middle">4 features, 16 cells</text>
+<rect x="610" y="110" width="37.5" height="37.5" fill="#2d7dd2" fill-opacity="0.14"/>
+<rect x="610" y="110" width="150" height="150" rx="6" fill="none" stroke="#b4b2a9" stroke-width="1.25"/>
+<path d="M685 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 185H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M647.5 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M722.5 110V260" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 147.5H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<path d="M610 222.5H760" fill="none" stroke="#b4b2a9" stroke-width="1.25" stroke-dasharray="5 4"/>
+<circle cx="619.4" cy="156.9" r="4" fill="#5f5e5a"/>
+<circle cx="638.1" cy="156.9" r="4" fill="#5f5e5a"/>
+<circle cx="619.4" cy="175.6" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="128.8" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="128.8" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="156.9" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="156.9" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="175.6" r="4" fill="#5f5e5a"/>
+<circle cx="628.8" cy="203.8" r="4" fill="#5f5e5a"/>
+<circle cx="666.2" cy="203.8" r="4" fill="#5f5e5a"/>
+<circle cx="656.9" cy="241.2" r="4" fill="#5f5e5a"/>
+<circle cx="675.6" cy="241.2" r="4" fill="#5f5e5a"/>
+<circle cx="703.8" cy="128.8" r="4" fill="#5f5e5a"/>
+<circle cx="703.8" cy="166.2" r="4" fill="#5f5e5a"/>
+<circle cx="694.4" cy="241.2" r="4" fill="#5f5e5a"/>
+<circle cx="713.1" cy="241.2" r="4" fill="#5f5e5a"/>
+<circle cx="741.2" cy="203.8" r="4" fill="#5f5e5a"/>
+<circle cx="731.9" cy="231.9" r="4" fill="#5f5e5a"/>
+<circle cx="750.6" cy="231.9" r="4" fill="#5f5e5a"/>
+<circle cx="731.9" cy="250.6" r="4" fill="#5f5e5a"/>
+<text x="685" y="288" font-size="13" font-weight="400" fill="#1f1f1f" text-anchor="middle">Matching cell: 0 of 20</text>
+</svg>

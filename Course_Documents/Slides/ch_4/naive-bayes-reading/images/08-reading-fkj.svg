@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" role="img" aria-label="How to read f sub k j of x sub j" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1f1f1f"/></marker>
+</defs>
+<rect x="0" y="0" width="760" height="340" fill="#ffffff"/>
+<text x="40" y="34" font-size="15" font-weight="600" fill="#1f1f1f" text-anchor="start">How to read a one-feature share</text>
+<g font-family="'Times New Roman', Times, serif" font-style="italic" fill="#1f1f1f">
+<text x="300" y="170" font-size="72">f</text>
+<text x="326" y="190" font-size="36" fill="#2d7dd2">k</text>
+<text x="347" y="190" font-size="36" fill="#d2662d">j</text>
+<text x="368" y="170" font-size="72" font-style="normal">(</text>
+<text x="392" y="170" font-size="72" fill="#3a8f4f">x</text>
+<text x="428" y="190" font-size="36" fill="#3a8f4f">j</text>
+<text x="442" y="170" font-size="72" font-style="normal">)</text>
+</g>
+<path d="M180 250C240 250 320 240 334 200" fill="none" stroke="#1f1f1f" stroke-width="1.25" marker-end="url(#arr)"/>
+<text x="40" y="246" font-size="13" font-weight="600" fill="#2d7dd2" text-anchor="start">1st subscript: the class</text>
+<text x="40" y="264" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">k = 1 is defaulters,</text>
+<text x="40" y="280" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">k = 2 is non-defaulters</text>
+<path d="M500 262C420 262 362 245 354 202" fill="none" stroke="#1f1f1f" stroke-width="1.25" marker-end="url(#arr)"/>
+<text x="510" y="258" font-size="13" font-weight="600" fill="#d2662d" text-anchor="start">2nd subscript: the feature</text>
+<text x="510" y="276" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">j = 1 is balance,</text>
+<text x="510" y="292" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">j = 2 is missed payment</text>
+<path d="M500 92C460 92 425 100 415 118" fill="none" stroke="#1f1f1f" stroke-width="1.25" marker-end="url(#arr)"/>
+<text x="510" y="88" font-size="13" font-weight="600" fill="#3a8f4f" text-anchor="start">In parentheses: the value</text>
+<text x="510" y="106" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">this customer's observed value</text>
+<text x="510" y="122" font-size="11.5" font-weight="400" fill="#5f5e5a" text-anchor="start">of feature j, e.g. "yes"</text>
+<text x="40" y="322" font-size="12.5" font-weight="400" fill="#1f1f1f" text-anchor="start">Example: f&#8321;&#8322;(yes) = 0.60 is the share of defaulters (class 1) whose missed-payment feature (feature 2) is "yes."</text>
+</svg>
