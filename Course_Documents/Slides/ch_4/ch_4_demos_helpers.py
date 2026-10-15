@@ -6,6 +6,7 @@ this module. The notebooks stay focused on ideas; the matplotlib, plotly, and
 ipywidgets details live here. The Default data is used throughout, with
 `default` recoded as 0/1 in a column named `default01`.
 """
+import warnings
 from fractions import Fraction
 from io import BytesIO
 from types import SimpleNamespace
@@ -18,7 +19,9 @@ import statsmodels.formula.api as smf
 from IPython.display import display
 from ISLP import load_data
 from matplotlib import get_backend, rc_context
-from matplotlib.patches import Rectangle
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from matplotlib.lines import Line2D
+from matplotlib.patches import FancyArrowPatch, Rectangle
 from matplotlib.pyplot import close, figure, subplots, switch_backend
 from matplotlib.ticker import PercentFormatter
 from plotly.subplots import make_subplots
@@ -836,6 +839,7 @@ CLASS_COLORS = {1: '#E69F00', 0: '#56B4E9'}
 CLASS_LABELS = {1: 'defaulted (1)', 0: 'did not default (0)'}
 OUTCOMES = ('TP', 'FN', 'FP', 'TN')
 OUTCOME_COLORS = {'TP': '#009E73', 'FN': '#D55E00', 'FP': '#CC79A7', 'TN': '#999999'}
+THRESHOLD_COLOR = '#0072B2'
 OUTCOME_LABELS = {'TP': 'caught defaulters', 'FN': 'missed defaulters',
                   'FP': 'false alarms', 'TN': 'correctly left alone'}
 
@@ -883,8 +887,11 @@ def _figure_area():
     return widgets.Image(format='png', layout=widgets.Layout(max_width='100%'))
 
 
-def _show(out, draw):
+def _show(out, draw, size_percent=100):
     """Redraw a matplotlib figure into a _figure_area() Image widget.
+
+    size_percent shrinks the displayed image to that percent of its full size; it
+    still never grows past the width of the cell.
 
     Deliberately avoids ipywidgets.Output: some notebook frontends (VS Code, Cursor)
     also echo Output-captured figures into the cell, so the demo appears twice."""
@@ -893,7 +900,11 @@ def _show(out, draw):
     buffer = BytesIO()
     fig.savefig(buffer, format='png', bbox_inches='tight')
     close(fig)
-    out.value = buffer.getvalue()
+    png = buffer.getvalue()
+    if size_percent != 100:
+        width = int.from_bytes(png[16:20], 'big')   # PNG header: IHDR width in pixels
+        out.layout.width = f'{round(width * size_percent / 100)}px'
+    out.value = png
 
 
 def _html(text):
@@ -1089,6 +1100,35 @@ def _draw_outcome_scatter(ax, fit, threshold, show_counts=(), legend=True):
     return counts
 
 
+def _draw_threshold_curve(ax, fit, threshold):
+    """The fitted curve over the outcome-colored data, with the threshold as a horizontal
+    line. Customers right of where the curve crosses it are flagged."""
+    codes = outcome_codes(fit.y, fit.p, threshold)
+    for k in ('TN', 'FP', 'FN', 'TP'):
+        m = codes == k
+        ax.plot(fit.x[m], fit.y_jitter[m], 'o', ms=3.5, alpha=0.6, mec='none',
+                color=OUTCOME_COLORS[k], label=f'{OUTCOME_LABELS[k]} ({k})')
+    grid = _x_grid(fit)
+    ax.plot(grid, logistic(fit.b0 + fit.b1 * grid), color='black', lw=3)
+    line = min(threshold, 1.0)
+    ax.axhline(line, color=THRESHOLD_COLOR, lw=2.5, ls=':')
+    label = 'never flag' if threshold > 1 else f'threshold = {threshold:.2f}'
+    ax.text(grid[0] + 0.05, line + 0.02, label, ha='left', va='bottom', fontsize=14,
+            color=THRESHOLD_COLOR, fontweight='bold',
+            bbox=dict(facecolor='white', alpha=0.85, edgecolor='none', pad=2))
+    if threshold < 1:
+        cut = (grid[0] if threshold <= 0 else
+               (np.log(threshold / (1 - threshold)) - fit.b0) / fit.b1)
+        ax.axvline(cut, color='#666666', lw=1.5, ls='--')
+        ax.axvspan(cut, grid[-1], color=OUTCOME_COLORS['TP'], alpha=0.08, lw=0)
+    ax.set_xlim(grid[0], grid[-1])
+    ax.set_ylim(-0.1, 1.1)
+    ax.set_xlabel('balance (standardized)')
+    ax.set_ylabel('predicted probability of default')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.17), ncol=2, markerscale=3,
+              frameon=False)
+
+
 def plot_outcome_scatter(fit, threshold=0.5):
     """The outcome-colored scatter on its own."""
     with rc_context(BIG_FONTS):
@@ -1189,8 +1229,10 @@ def _sum_text(cells):
     return f'({joined})' if len(cells) > 1 else joined
 
 
-def metric_highlighter(fit, threshold=0.5):
-    """Pick a metric: its numerator cells light up, its denominator cells are outlined."""
+def metric_highlighter(fit, threshold=0.5, size_percent=100):
+    """Pick a metric: its numerator cells light up, its denominator cells are outlined.
+
+    size_percent shows the figure at that percent of its full size (80 = 20% smaller)."""
     metric = widgets.ToggleButtons(options=list(METRICS))
     which = widgets.ToggleButtons(options=[f'Model at {threshold}', 'Always "no"'])
     readout = widgets.HTML()
@@ -1212,7 +1254,7 @@ def metric_highlighter(fit, threshold=0.5):
             _draw_confusion(ax, counts, numerator=num, denominator=den)
             fig.tight_layout()
             return fig
-        _show(out, draw)
+        _show(out, draw, size_percent)
 
     metric.observe(update, names='value')
     which.observe(update, names='value')
@@ -1242,18 +1284,30 @@ def _arrow(new, old):
 
 
 def _threshold_controls(presets):
-    slider = widgets.FloatSlider(value=0.5, min=0.01, max=0.99, step=0.01,
-                                 description='threshold', readout_format='.2f',
+    """The threshold slider and preset buttons. The slider's label and value are drawn
+    in THRESHOLD_COLOR (SliderStyle can't color text), so `value` must be displayed
+    next to the slider."""
+    slider = widgets.FloatSlider(value=0.5, min=0.0, max=1.0, step=0.01, readout=False,
+                                 description_allow_html=True,
                                  layout=widgets.Layout(width='600px'))
+    slider.style.handle_color = THRESHOLD_COLOR
+    value = widgets.HTML(layout=widgets.Layout(width='50px'))
     state = {'never': False}
     buttons = []
-    for label, value in presets:
+
+    def relabel():
+        name = 'never flag' if state['never'] else 'threshold'
+        slider.description = f'<b style="color: {THRESHOLD_COLOR};">{name}</b>'
+        number = '–' if state['never'] else f'{slider.value:.2f}'
+        value.value = f'<b style="color: {THRESHOLD_COLOR};">{number}</b>'
+
+    for label, preset in presets:
         b = widgets.Button(description=label, layout=widgets.Layout(width='110px'))
 
-        def click(button, value=value):
-            state['never'] = value > 1
-            slider.value = slider.max if value > 1 else value
-            slider.description = 'never flag' if value > 1 else 'threshold'
+        def click(button, preset=preset):
+            state['never'] = preset > 1
+            slider.value = slider.max if preset > 1 else preset
+            relabel()
         b.on_click(click)
         buttons.append(b)
 
@@ -1263,22 +1317,42 @@ def _threshold_controls(presets):
     def moved(change):
         if change['owner'] is slider and state['never'] and change['new'] != slider.max:
             state['never'] = False
-        slider.description = 'never flag' if state['never'] else 'threshold'
+        relabel()
 
     slider.observe(moved, names='value')
-    return slider, buttons, threshold, state
+    relabel()
+    return slider, value, buttons, threshold, state
 
 
-def threshold_demo(fit, show_f1=False):
-    """Slide the threshold: the scatter, confusion matrix, and metrics update together.
-    Nothing is refit; only the cutoff on the precomputed probabilities moves."""
-    slider, buttons, threshold, state = _threshold_controls(
+def precision_recall_by_threshold(fit, thresholds=THRESHOLDS):
+    """Precision is NaN where nobody is flagged."""
+    c = _counts_by_threshold(fit, thresholds)
+    flagged = c['TP'] + c['FP']
+    precision = np.divide(c['TP'], flagged, out=np.full(len(flagged), np.nan),
+                          where=flagged > 0)
+    return precision, c['TP'] / (c['TP'] + c['FN'])
+
+
+CURVE_COLORS = {'recall': OUTCOME_COLORS['FN'], 'precision': OUTCOME_COLORS['FP'], 'F1': 'black'}
+
+
+def threshold_demo(fit, show_f1=False, curves=None):
+    """Slide the threshold: the curve, confusion matrix, and metrics update together.
+    Nothing is refit; only the cutoff on the precomputed probabilities moves.
+
+    curves names metrics ('recall', 'precision', 'F1') to plot against every threshold
+    in a third panel. It defaults to ('F1',) when show_f1 is True, and to none otherwise."""
+    if curves is None:
+        curves = ('F1',) if show_f1 else ()
+    slider, value, buttons, threshold, state = _threshold_controls(
         [('0.5', 0.5), ('0.2', 0.2), ('never flag', NEVER_FLAG)])
     readout = widgets.HTML()
     out = _figure_area()
     previous = {'values': None, 'threshold': None}
     f1_curve = f1_by_threshold(fit)
     best = THRESHOLDS[np.argmax(f1_curve)]
+    precision_curve, recall_curve = precision_recall_by_threshold(fit)
+    curve_values = {'recall': recall_curve, 'precision': precision_curve, 'F1': f1_curve}
     names = ['accuracy', 'recall', 'precision', 'specificity', 'false positive rate', 'F1']
 
     def update(change=None):
@@ -1302,25 +1376,31 @@ def threshold_demo(fit, show_f1=False):
         previous['values'] = values
 
         def draw():
-            if show_f1:
+            if curves:
                 fig, (ax_s, ax_m, ax_f) = subplots(1, 3, figsize=(20, 6.5),
                                                    width_ratios=[1.2, 1, 1])
             else:
                 fig, (ax_s, ax_m) = subplots(1, 2, figsize=(16, 6.5), width_ratios=[1.25, 1])
-            _draw_outcome_scatter(ax_s, fit, t)
+            _draw_threshold_curve(ax_s, fit, t)
             _draw_confusion(ax_m, counts)
-            if show_f1:
-                ax_f.plot(THRESHOLDS, f1_curve, color='black', lw=2.5)
-                ax_f.axvline(best, color=OUTCOME_COLORS['TP'], lw=2, ls=':')
-                ax_f.text(best + 0.02, 0.05, f'best F1 = {f1_curve.max():.3f}\nat {best:.2f}',
-                          color=OUTCOME_COLORS['TP'], fontsize=13)
-                if t <= 1:
-                    ax_f.plot(t, values['F1'], 'o', ms=12, color='black')
+            if curves:
+                for name in curves:
+                    ax_f.plot(THRESHOLDS, curve_values[name], color=CURVE_COLORS[name], lw=2.5,
+                              label=name)
+                    if t <= 1 and not np.isnan(values[name]):
+                        ax_f.plot(t, values[name], 'o', ms=12, color=CURVE_COLORS[name],
+                                  mec='black')
+                if 'F1' in curves:
+                    ax_f.axvline(best, color=OUTCOME_COLORS['TP'], lw=2, ls=':')
+                    ax_f.text(best + 0.02, 0.05, f'best F1 = {f1_curve.max():.3f}\nat {best:.2f}',
+                              color=OUTCOME_COLORS['TP'], fontsize=13)
+                if len(curves) > 1:
+                    ax_f.legend(loc='center right')
                 ax_f.set_xlim(0, 1)
                 ax_f.set_ylim(0, 1)
                 ax_f.set_xlabel('threshold')
-                ax_f.set_ylabel('F1')
-                ax_f.set_title('F1 at every threshold')
+                ax_f.set_ylabel(' and '.join(curves))
+                ax_f.set_title(f'{" and ".join(curves)} at every threshold')
             fig.tight_layout()
             return fig
         _show(out, draw)
@@ -1329,7 +1409,7 @@ def threshold_demo(fit, show_f1=False):
     for b in buttons:
         b.on_click(update)
     update()
-    display(widgets.VBox([widgets.HBox([slider] + buttons),
+    display(widgets.VBox([widgets.HBox([slider, value] + buttons),
                           widgets.HBox([out, readout])]))
 
 
@@ -1382,14 +1462,14 @@ def _draw_roc_axes(ax):
     ax.set_ylabel('recall (true positive rate)\n(share of defaulters caught)')
 
 
-SWEEP = np.round(np.r_[np.arange(0.95, 0.2, -0.05), np.arange(0.2, 0.005, -0.01)], 2)
+SWEEP = np.round(np.r_[1.0, np.arange(0.95, 0.2, -0.05), np.arange(0.2, 0.005, -0.01), 0.0], 2)
 
 
 def roc_tracer(fit, sweep=SWEEP):
     """Each threshold is one point on the ROC axes. Sweep traces the curve from high
     thresholds to low ones (in finer steps below 0.2, where the point moves fastest);
     Show full curve adds every threshold and shades the AUC."""
-    slider, buttons, threshold, state = _threshold_controls([])
+    slider, value, buttons, threshold, state = _threshold_controls([])
     sweep_button = widgets.Button(description='Sweep', button_style='info')
     full = widgets.ToggleButton(description='Show full curve')
     readout = widgets.HTML()
@@ -1412,7 +1492,7 @@ def roc_tracer(fit, sweep=SWEEP):
 
         def draw():
             fig, (ax_s, ax_r) = subplots(1, 2, figsize=(16, 6.8), width_ratios=[1.25, 1])
-            _draw_outcome_scatter(ax_s, fit, t)
+            _draw_threshold_curve(ax_s, fit, t)
             _draw_roc_axes(ax_r)
             if full.value:
                 ax_r.fill_between(fpr_all, tpr_all, color=OUTCOME_COLORS['TP'], alpha=0.15)
@@ -1423,7 +1503,7 @@ def roc_tracer(fit, sweep=SWEEP):
                 xs, ys = zip(*trace['points'])
                 ax_r.plot(xs, ys, 'o-', ms=5, color='black', lw=1.5)
             ax_r.plot(*point, 'o', ms=15, color=OUTCOME_COLORS['FP'], mec='black', mew=1.5)
-            ax_r.set_title(f'threshold = {t:.2f}')
+            ax_r.set_title(f'threshold = {t:.2f}', color=THRESHOLD_COLOR, fontweight='bold')
             fig.tight_layout()
             return fig
         _show(out, draw)
@@ -1439,10 +1519,10 @@ def roc_tracer(fit, sweep=SWEEP):
     full.observe(update, names='value')
     sweep_button.on_click(run_sweep)
     update()
-    display(widgets.VBox([widgets.HBox([slider, sweep_button, full]), readout, out]))
+    display(widgets.VBox([widgets.HBox([slider, value, sweep_button, full]), readout, out]))
 
 
-def roc_comparison(df, fit, seed=463):
+def plot_roc_comparison(df, fit, seed=463):
     """ROC curves for three scorers: balance, income only, and random numbers."""
     income = ((df['income'] - df['income'].mean()) / df['income'].std()).to_numpy()[:, None]
     scores = {
@@ -1452,35 +1532,286 @@ def roc_comparison(df, fit, seed=463):
         'random scores': np.random.default_rng(seed).random(len(fit.y)),
     }
     colors = dict(zip(scores, [OUTCOME_COLORS['TP'], CLASS_COLORS[1], '#555555']))
-    toggles = {name: widgets.ToggleButton(value=(name == 'balance model'), description=name,
-                                          layout=widgets.Layout(width='180px'))
-               for name in scores}
-    out = _figure_area()
-
-    def draw():
+    with rc_context(BIG_FONTS):
         fig, ax = subplots(figsize=(8, 7.5))
         _draw_roc_axes(ax)
         for name, s in scores.items():
-            if toggles[name].value:
-                fpr, tpr, _ = roc_curve(fit.y, s)
-                ax.plot(fpr, tpr, lw=3, color=colors[name],
-                        label=f'{name}: AUC = {roc_auc_score(fit.y, s):.3f}')
-        if any(t.value for t in toggles.values()):
-            ax.legend(loc='lower right')
+            fpr, tpr, _ = roc_curve(fit.y, s)
+            ax.plot(fpr, tpr, lw=3, color=colors[name],
+                    label=f'{name}: AUC = {roc_auc_score(fit.y, s):.3f}')
+        ax.legend(loc='lower right')
         fig.tight_layout()
-        return fig
-
-    for t in toggles.values():
-        t.observe(lambda change: _show(out, draw), names='value')
-    _show(out, draw)
-    display(widgets.VBox([widgets.HBox(list(toggles.values())), out]))
+    return fig
 
 
-# --- Section 9: choosing a threshold with costs ------------------------------
+# --- Sections 9 and 10: the likelihood surface, and separated classes ---------
 
-def cost_demo(fit, costs=BANK_COSTS):
+# Twelve made-up customers. In the overlapping version, one low-balance customer
+# defaulted and one high-balance customer didn't; in the separated version, every
+# customer above 0 defaulted and nobody below 0 did.
+TOY_X = np.array([-3, -2.5, -2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2, 2.5, 3.0])
+TOY_Y_OVERLAP = np.array([0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1])
+TOY_Y_SEPARATED = (TOY_X > 0).astype(int)
+
+
+def _toy(separated):
+    return TOY_X, (TOY_Y_SEPARATED if separated else TOY_Y_OVERLAP)
+
+
+def _toy_likelihood(b0, b1, x, y):
+    """Likelihood of the outcomes y for every (b0, b1); b0 and b1 may be arrays."""
+    z = np.asarray(b0, dtype=float)[..., None] + np.asarray(b1, dtype=float)[..., None] * x
+    return np.exp((y * z - np.logaddexp(0, z)).sum(axis=-1))
+
+
+def likelihood_surface_demo(separated=False, size_percent=100):
+    """β₀ and β₁ sliders move a curve through twelve made-up customers (left) and a point
+    on the likelihood surface (right). With separated=True the classes don't overlap,
+    and the surface has no peak."""
+    x, y = _toy(separated)
+    b0 = widgets.FloatSlider(value=0.0, min=-4, max=4, step=0.1, description='β₀',
+                             layout=widgets.Layout(width='450px'))
+    b1 = widgets.FloatSlider(value=0.0, min=-1, max=10, step=0.1, description='β₁',
+                             layout=widgets.Layout(width='450px'))
+    readout = widgets.HTML()
+    out = _figure_area()
+    G0, G1 = np.meshgrid(np.linspace(-4, 4, 81), np.linspace(-1, 10, 111))
+    L = _toy_likelihood(G0, G1, x, y)
+    controls = [widgets.VBox([b0, b1])]
+    if not separated:
+        model = LogisticRegression(C=np.inf).fit(x[:, None], y)
+        peak = (model.intercept_[0], model.coef_[0, 0])
+        jump = widgets.Button(description='Jump to the peak', button_style='info')
+
+        def to_peak(button):
+            with b0.hold_trait_notifications(), b1.hold_trait_notifications():
+                b0.value, b1.value = round(peak[0], 1), round(peak[1], 1)
+        jump.on_click(to_peak)
+        controls.append(jump)
+
+    def update(change=None):
+        p = logistic(b0.value + b1.value * x)
+        got = np.where(y == 1, p, 1 - p)
+        now = float(np.prod(got))
+        readout.value = _html('likelihood = ' + ' × '.join(f'{g:.2f}' for g in got)
+                              + f' = <b>{now:.3g}</b>')
+
+        def draw():
+            fig = figure(figsize=(17, 6.5))
+            ax = fig.add_subplot(1, 2, 1)
+            grid = np.linspace(-3.6, 3.6, 200)
+            ax.plot(grid, logistic(b0.value + b1.value * grid), color='black', lw=3)
+            for k in (1, 0):
+                m = y == k
+                ax.plot(x[m], y[m], 'o', ms=15, color=CLASS_COLORS[k], mec='black',
+                        label=CLASS_LABELS[k])
+            for xi, yi, g in zip(x, y, got):
+                ax.text(xi, yi + (0.08 if yi else -0.08), f'{g:.2f}', ha='center',
+                        va='bottom' if yi else 'top', fontsize=13)
+            ax.set_ylim(-0.3, 1.3)
+            ax.set_xlabel('balance (made up, standardized)')
+            ax.set_ylabel('P(default)')
+            ax.set_title('Each number: the probability the curve gave to what happened')
+            ax.legend(loc='center left')
+
+            ax3 = fig.add_subplot(1, 2, 2, projection='3d')
+            ax3.plot_surface(G0, G1, L, cmap='viridis', alpha=0.7, linewidth=0,
+                             rstride=2, cstride=2)
+            ax3.plot([b0.value] * 2, [b1.value] * 2, [0, now], color=OUTCOME_COLORS['FN'], lw=3)
+            ax3.scatter([b0.value], [b1.value], [now], s=150, color=OUTCOME_COLORS['FN'],
+                        edgecolors='black', depthshade=False, label='your β₀, β₁')
+            if not separated:
+                ax3.scatter([peak[0]], [peak[1]], [L.max()], s=350, marker='*',
+                            color=OUTCOME_COLORS['TP'], edgecolors='black', depthshade=False,
+                            label='the peak')
+            ax3.set_xlabel('β₀', labelpad=10)
+            ax3.set_ylabel('β₁', labelpad=10)
+            ax3.set_zlabel('likelihood', labelpad=18)
+            ax3.ticklabel_format(axis='z', style='sci', scilimits=(-2, 2))
+            ax3.view_init(elev=25, azim=-55)
+            ax3.set_title('the likelihood surface')
+            ax3.legend(loc='upper left')
+            fig.tight_layout()
+            return fig
+        _show(out, draw, size_percent)
+
+    b0.observe(update, names='value')
+    b1.observe(update, names='value')
+    update()
+    display(widgets.VBox([widgets.HBox(controls), readout, out]))
+
+
+def plot_separation_tension(b1_max=8):
+    """Log-likelihood along β₀ = 0 as the curve gets steeper, split into the customers a
+    steeper curve helps and the ones it hurts."""
+    b1 = np.linspace(0, b1_max, 400)
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(1, 2, figsize=(16, 5.8), sharey=True)
+        for ax, separated in zip(axes, (False, True)):
+            x, y = _toy(separated)
+            z = b1[:, None] * x
+            per_point = y * z - np.logaddexp(0, z)
+            total = per_point.sum(axis=1)
+            wrong_side = (x > 0) != (y == 1)
+            if wrong_side.any():
+                ax.plot(b1, per_point[:, ~wrong_side].sum(axis=1), color=OUTCOME_COLORS['TP'],
+                        lw=2.5, label=f'the {(~wrong_side).sum()} customers on the expected side')
+                ax.plot(b1, per_point[:, wrong_side].sum(axis=1), color=OUTCOME_COLORS['FN'],
+                        lw=2.5, label=f'the {wrong_side.sum()} overlapping customers')
+            ax.plot(b1, total, color='black', lw=3.5, label='total')
+            ax.axhline(0, color='#888888', lw=1, ls='--')
+            if separated:
+                ax.annotate('keeps climbing toward 0:\nno peak', (b1_max, total[-1]),
+                            xytext=(b1_max * 0.55, -6), fontsize=15, fontweight='bold',
+                            arrowprops=dict(arrowstyle='->', lw=2))
+                ax.set_title('Classes separated: nothing pulls back')
+            else:
+                i = int(np.argmax(total))
+                ax.plot(b1[i], total[i], '*', ms=24, color=OUTCOME_COLORS['TP'], mec='black')
+                ax.annotate(f'peak at β₁ ≈ {b1[i]:.1f}', (b1[i], total[i]), xytext=(25, 15),
+                            textcoords='offset points', fontsize=15, fontweight='bold')
+                ax.set_title('Classes overlap: two forces balance')
+            ax.set_ylim(-20, 1)
+            ax.set_xlabel('β₁ (steepness), with β₀ = 0')
+            ax.legend(loc='lower left')
+        axes[0].set_ylabel('log-likelihood (closer to 0 is better)')
+        fig.tight_layout()
+    return fig
+
+
+def separation_fits():
+    """β₁ for the twelve toy customers, overlapping vs. separated, from statsmodels and
+    scikit-learn with and without its default penalty."""
+    rows = []
+    for separated in (False, True):
+        x, y = _toy(separated)
+        data = 'separated' if separated else 'overlap'
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            sm_fit = smf.logit('y ~ x', data=pd.DataFrame({'x': x, 'y': y})).fit(disp=0)
+        rows.append((data, 'statsmodels', sm_fit.params['x'], f"{sm_fit.bse['x']:,.2f}"))
+        if separated:
+            for label, C, tol in (('scikit-learn, no penalty (C=np.inf)', np.inf, 1e-4),
+                                  ('same, stricter stopping rule (tol=1e-10)', np.inf, 1e-10),
+                                  ('scikit-learn, default penalty (C=1)', 1.0, 1e-4)):
+                b1 = LogisticRegression(C=C, tol=tol).fit(x[:, None], y).coef_[0, 0]
+                rows.append((data, label, b1, '(not reported)'))
+    return (pd.DataFrame(rows, columns=['classes', 'fit with', 'β₁', 'standard error of β₁'])
+            .round({'β₁': 2}).set_index(['classes', 'fit with']))
+
+
+# --- Section 11: more than one input -----------------------------------------
+
+def plot_probability_surface(model, X, y, n_no=1000, seed=463):
+    """A two-input logistic model: its probability surface (left), and the same surface
+    seen from above with the customers and the p = 0.5 decision boundary (right)."""
+    (name1, name2), (c1, c2) = X.columns, model.coef_[0]
+    b0 = model.intercept_[0]
+    G1, G2 = np.meshgrid(np.linspace(X[name1].min() - 0.1, X[name1].max() + 0.1, 120),
+                         np.linspace(X[name2].min() - 0.1, X[name2].max() + 0.1, 120))
+    P = logistic(b0 + c1 * G1 + c2 * G2)
+    y = np.asarray(y)
+    rng = np.random.default_rng(seed)
+    shown_no = rng.choice(np.flatnonzero(y == 0), n_no, replace=False)
+    with rc_context(BIG_FONTS):
+        fig = figure(figsize=(18, 7))
+        ax3 = fig.add_subplot(1, 2, 1, projection='3d')
+        ax3.plot_surface(G1, G2, P, cmap='viridis', linewidth=0, rstride=2, cstride=2,
+                         alpha=0.9)
+        ax3.set_xlabel(f'{name1} (standardized)', labelpad=12)
+        ax3.set_ylabel(f'{name2} (standardized)', labelpad=12)
+        ax3.set_zlabel('P(default)', labelpad=10)
+        ax3.view_init(elev=25, azim=-120)
+        ax3.set_title('the probability surface')
+
+        ax = fig.add_subplot(1, 2, 2)
+        filled = ax.contourf(G1, G2, P, levels=np.linspace(0, 1, 11), cmap='viridis', alpha=0.8)
+        fig.colorbar(filled, ax=ax, label='P(default)')
+        ax.scatter(X[name1].to_numpy()[shown_no], X[name2].to_numpy()[shown_no], s=10,
+                   color=CLASS_COLORS[0], edgecolors='none', alpha=0.7,
+                   label=f'did not default ({n_no:,} of {(y == 0).sum():,} shown)')
+        ax.scatter(X[name1][y == 1], X[name2][y == 1], s=14, color=CLASS_COLORS[1],
+                   edgecolors='black', linewidths=0.3, label='defaulted (all shown)')
+        boundary = ax.contour(G1, G2, P, levels=[0.5], colors='white', linewidths=3,
+                              linestyles='--')
+        ax.clabel(boundary, fmt={0.5: 'p = 0.5'}, fontsize=14)
+        ax.set_xlabel(f'{name1} (standardized)')
+        ax.set_ylabel(f'{name2} (standardized)')
+        ax.set_title('seen from above')
+        ax.legend(loc='lower left', markerscale=2, framealpha=0.9)
+        fig.suptitle(rf'log-odds $= {b0:.2f} + {c1:.2f}\cdot${name1}$ + {c2:.2f}\cdot${name2}',
+                     fontsize=18)
+        fig.tight_layout()
+    return fig
+
+
+# --- Section 12: more than two classes, one-vs-all ---------------------------
+
+SPECIES_COLORS = ('#E69F00', '#56B4E9', '#009E73')
+
+
+def _one_vs_rest_scores(ova, X):
+    """Each binary model's P(this class) for every row of X, before any normalizing."""
+    X = pd.DataFrame(np.asarray(X, dtype=float), columns=ova.feature_names_in_)
+    return np.column_stack([e.predict_proba(X)[:, 1] for e in ova.estimators_])
+
+
+def plot_one_vs_rest(ova, X, y, names):
+    """One panel per one-vs-rest model (its P(class) and its 0.5 line), then the combined
+    prediction: whichever model gives the highest score."""
+    (name1, name2), y = X.columns, np.asarray(y)
+    G1, G2 = np.meshgrid(np.linspace(X[name1].min() - 0.5, X[name1].max() + 0.5, 250),
+                         np.linspace(X[name2].min() - 0.3, X[name2].max() + 0.3, 250))
+    scores = _one_vs_rest_scores(ova, np.c_[G1.ravel(), G2.ravel()])
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(1, 4, figsize=(24, 6), sharey=True)
+        for k, (ax, name, color) in enumerate(zip(axes, names, SPECIES_COLORS)):
+            cmap = LinearSegmentedColormap.from_list(name, ['white', color])
+            ax.contourf(G1, G2, scores[:, k].reshape(G1.shape), levels=np.linspace(0, 1, 11),
+                        cmap=cmap)
+            ax.contour(G1, G2, scores[:, k].reshape(G1.shape), levels=[0.5], colors='black',
+                       linewidths=2.5, linestyles='--')
+            ax.scatter(X[name1][y != k], X[name2][y != k], s=30, color='#999999',
+                       edgecolors='white', linewidths=0.5, label='the rest')
+            ax.scatter(X[name1][y == k], X[name2][y == k], s=40, color=color,
+                       edgecolors='black', linewidths=0.6, label=name)
+            ax.set_title(f'model {k + 1}: {name} vs. the rest')
+            ax.set_xlabel(name1)
+            ax.legend(loc='upper left')
+        regions = scores.argmax(axis=1).reshape(G1.shape)
+        ax = axes[3]
+        ax.contourf(G1, G2, regions, levels=[-0.5, 0.5, 1.5, 2.5],
+                    cmap=ListedColormap(SPECIES_COLORS), alpha=0.3)
+        for k, (name, color) in enumerate(zip(names, SPECIES_COLORS)):
+            ax.scatter(X[name1][y == k], X[name2][y == k], s=40, color=color,
+                       edgecolors='black', linewidths=0.6, label=name)
+        ax.set_title('prediction: the highest score wins')
+        ax.set_xlabel(name1)
+        ax.legend(loc='upper left')
+        axes[0].set_ylabel(name2)
+        fig.tight_layout()
+    return fig
+
+
+def one_vs_rest_table(ova, X, y, names, rows=(0, 60, 120)):
+    """The three models' scores for a few flowers, their sum, and the prediction."""
+    scores = _one_vs_rest_scores(ova, X.iloc[list(rows)])
+    table = X.iloc[list(rows)].copy()
+    for k, name in enumerate(names):
+        table[f'score: {name}'] = scores[:, k].round(3)
+    table['sum of scores'] = scores.sum(axis=1).round(2)
+    table['predicted'] = [names[k] for k in scores.argmax(axis=1)]
+    table['actual'] = [names[k] for k in np.asarray(y)[list(rows)]]
+    return table.rename_axis('flower')
+
+
+# --- Appendix B: choosing a threshold with costs -----------------------------
+
+def cost_demo(fit, costs=BANK_COSTS, size_percent=100):
     """Total cost = cost per missed defaulter x FN + cost per false alarm x FP, at every
-    threshold. The scatter and matrix show the cheapest threshold."""
+    threshold. The curve and matrix show the cheapest threshold.
+
+    size_percent shows the figure at that percent of its full size (80 = 20% smaller)."""
     style = {'description_width': '230px'}
     fn_cost = widgets.IntSlider(value=costs[0], min=0, max=5000, step=50, style=style,
                                 description='cost of a missed defaulter ($)',
@@ -1501,14 +1832,15 @@ def cost_demo(fit, costs=BANK_COSTS):
         best = THRESHOLDS[i]
         at_half = total[THRESHOLDS == 0.5][0]
         fig = figure(figsize=(16, 12))
-        axes = fig.subplot_mosaic([['cost', 'cost'], ['scatter', 'matrix']],
+        axes = fig.subplot_mosaic([['cost', 'cost'], ['curve', 'matrix']],
                                   height_ratios=[1, 1.3], width_ratios=[1.25, 1])
         ax = axes['cost']
         ax.plot(THRESHOLDS, total / 1000, color='black', lw=2.5)
         ax.plot(best, total[i] / 1000, 'o', ms=14, color=OUTCOME_COLORS['TP'])
         ax.plot(0.5, at_half / 1000, 'o', ms=10, color='#888888')
+        offset = (15, 25) if abs(best - 0.5) < 0.2 else (15, -55)
         ax.annotate(f'cheapest: threshold {best:.2f}\ntotal \\${total[i]:,.0f}',
-                    (best, total[i] / 1000), xytext=(15, -55), textcoords='offset points',
+                    (best, total[i] / 1000), xytext=offset, textcoords='offset points',
                     fontsize=15, color=OUTCOME_COLORS['TP'], fontweight='bold')
         ax.annotate(f'threshold 0.50: \\${at_half:,.0f}', (0.5, at_half / 1000),
                     xytext=(10, -30), textcoords='offset points', fontsize=14, color='#555555')
@@ -1518,8 +1850,8 @@ def cost_demo(fit, costs=BANK_COSTS):
         ax.set_ylabel('total cost ($1,000s)')
         ax.set_title(f'\\${fn_cost.value:,} × missed defaulters  +  '
                      f'\\${fp_cost.value:,} × false alarms')
-        counts = _draw_outcome_scatter(axes['scatter'], fit, best)
-        _draw_confusion(axes['matrix'], counts)
+        _draw_threshold_curve(axes['curve'], fit, best)
+        _draw_confusion(axes['matrix'], outcome_counts(fit.y, fit.p, best))
         fig.tight_layout()
         return fig
 
@@ -1530,10 +1862,10 @@ def cost_demo(fit, costs=BANK_COSTS):
         return click
 
     for s in (fn_cost, fp_cost):
-        s.observe(lambda change: _show(out, draw), names='value')
+        s.observe(lambda change: _show(out, draw, size_percent), names='value')
     bank.on_click(preset(BANK_COSTS))
     equal.on_click(preset(EQUAL_COSTS))
-    _show(out, draw)
+    _show(out, draw, size_percent)
     display(widgets.VBox([widgets.HBox([widgets.VBox([fn_cost, fp_cost]),
                                         widgets.VBox([bank, equal])]), out]))
 
@@ -1723,3 +2055,864 @@ def gradient_descent_demo(fit, run_steps=25):
     display(widgets.VBox([scale, widgets.HBox([widgets.VBox([b0, b1, lr]),
                                                widgets.VBox([step_one, run, reset])]),
                           readout, out]))
+
+
+# ---------------------------------------------------------------------------
+# gradient_descent_demos.ipynb: fitting by searching
+# ---------------------------------------------------------------------------
+# Same approach as above: matplotlib drawn into an Image widget with _show, except
+# Demo 5a, which is a plotly figure so the surface can be rotated. Each demo computes
+# what its widgets need when it is built, so moving a control only redraws.
+
+PATH_COLOR = OUTCOME_COLORS['FN']    # descent paths and the current point
+BEST_COLOR = OUTCOME_COLORS['TP']    # the minimum
+SLICE_COLORS = ('#0072B2', '#E69F00')   # "move β₀ only", "move β₁ only"
+# The slopes widgets avoid PATH_COLOR: vermillion and amber merge for red-green color blindness.
+DOWNHILL_COLOR = 'black'             # −∇L
+UPHILL_COLOR = '0.5'                 # ∇L
+GD_TARGET = 3.0                      # the minimum of the toy loss L(β) = (β − 3)²
+
+
+def _fmt(v, places=4):
+    """Round to at most `places` decimals, drop trailing zeros, and use a real minus sign."""
+    text = f'{v:.{places}f}'.rstrip('0').rstrip('.')
+    return '0' if text in ('-0', '') else text.replace('-', '−')
+
+
+def _toy_loss(beta):
+    return (beta - GD_TARGET) ** 2
+
+
+def _toy_slope(beta):
+    return 2 * (beta - GD_TARGET)
+
+
+def _toy_path(eta, steps, start=0.0):
+    """β⁽⁰⁾, β⁽¹⁾, ... for gradient descent on the toy loss."""
+    beta_path = [start]
+    for t in range(steps):
+        beta_path.append(beta_path[-1] - eta * _toy_slope(beta_path[-1]))
+    return np.array(beta_path)
+
+
+def _mse(beta0, beta1, x, y):
+    """Mean squared error of the line beta0 + beta1 x; beta0 and beta1 may be arrays."""
+    beta0, beta1 = np.asarray(beta0, dtype=float), np.asarray(beta1, dtype=float)
+    return ((y - beta0[..., None] - beta1[..., None] * x) ** 2).mean(axis=-1)
+
+
+def _mse_gradient(beta, x, y):
+    """(∂L/∂β₀, ∂L/∂β₁) for mean squared error, from the exact formulas."""
+    r = y - beta[0] - beta[1] * x
+    return np.array([-2 * r.mean(), -2 * (r * x).mean()])
+
+
+def _least_squares(x, y):
+    beta1 = np.mean((x - x.mean()) * (y - y.mean())) / np.mean((x - x.mean()) ** 2)
+    return np.array([y.mean() - beta1 * x.mean(), beta1])
+
+
+def _standardized_tv(ad):
+    tv = ad['TV'].to_numpy()
+    return (tv - tv.mean()) / tv.std()
+
+
+# --- Demo 2: two spaces, linked ----------------------------------------------
+
+def tangent_slope_demo(start=6.3, size_percent=100, var='x', func='f', show_minimum=True):
+    """An x slider moves a point along f(x) = (x − 4)² + 2 and draws the tangent line
+    there, with its slope in the readout. No machine learning yet: just a curve.
+    size_percent shows the figure at that percent of its full size (80 = 20% smaller).
+    var and func rename the variable and the function on the slider, readout, and axes
+    (for example var='β₀', func='L'); show_minimum=False hides the dotted minimum line."""
+    def f(v):
+        return (v - 4) ** 2 + 2
+
+    def slope_at(v):
+        return 2 * (v - 4)
+
+    grid = np.linspace(0, 8, 300)
+    x = widgets.FloatSlider(value=start, min=0.5, max=7.5, step=0.1, readout_format='.1f',
+                            description=var, layout=widgets.Layout(width='600px'))
+    readout = widgets.HTML()
+    out = _figure_area()
+
+    def update(change=None):
+        v, m = x.value, slope_at(x.value)
+        sign = '+' if m > 0 else ('−' if m < 0 else '')
+        readout.value = _html(f'{var} = <b>{v:.1f}</b>, {func}({var}) = <b>{f(v):.2f}</b>, '
+                              f'slope of the tangent line = <b>{sign}{abs(m):.1f}</b>')
+
+        def draw():
+            fig, ax = subplots(figsize=(11, 6))
+            ax.plot(grid, f(grid), color='black', lw=2.5)
+            if show_minimum:
+                ax.axvline(4, color='0.6', ls=':', lw=1.5)
+                ax.text(4, 17.2, 'minimum', color='0.4', ha='center',
+                        bbox=dict(facecolor='white', edgecolor='none'))
+            half = min(1.2, 3 / max(abs(m), 1e-9))   # keeps steep tangents on screen
+            ax.plot([v - half, v + half], [f(v) - m * half, f(v) + m * half],
+                    color=SLICE_COLORS[0], lw=3, label='tangent line')
+            ax.plot(v, f(v), 'o', ms=15, color=PATH_COLOR, mec='black')
+            ax.set_xlim(0, 8)
+            ax.set_ylim(0, 18)
+            ax.set_xlabel(var)
+            ax.set_ylabel(f'{func}({var})')
+            ax.set_title(f'{func}({var}) = ({var} − 4)² + 2')
+            ax.legend(loc='lower right')
+            fig.tight_layout()
+            return fig
+        _show(out, draw, size_percent)
+
+    x.observe(update, names='value')
+    update()
+    display(widgets.VBox([x, readout, out]))
+
+
+FIXED_STEP_SIZES = (0.05, 0.25, 1.5)
+CURVE_LEARNING_RATES = (0.05, 0.25, 0.5, 0.9, 1.0, 1.05)
+
+
+def _curve_stepper(start, mode, show_toggle, seed, size_percent=100):
+    """Step downhill on f(x) = (x − 4)² + 2, one click at a time. In 'fixed' mode each
+    step moves a fixed distance in the downhill direction; in 'scaled' mode the step is
+    Δx = −η × slope. Shows the arithmetic for the latest step and a table of every step."""
+    def f(v):
+        return (v - 4) ** 2 + 2
+
+    def slope_at(v):
+        return 2 * (v - 4)
+
+    def signed(m):
+        return ('+' if m > 0 else '') + _fmt(m)
+
+    def direction(m):
+        return -1 if m > 0 else (1 if m < 0 else 0)
+
+    def delta(v):
+        m = slope_at(v)
+        if choice.value == 'fixed':
+            return direction(m) * size.value
+        return -size.value * m
+
+    rng = np.random.default_rng(seed)
+    grid = np.linspace(0, 8, 300)
+    choice = widgets.ToggleButtons(options=[('fixed step', 'fixed'),
+                                            ('step = η × slope', 'scaled')], value=mode)
+    size = widgets.Dropdown(style={'description_width': 'initial'},
+                            layout=widgets.Layout(width='220px'))
+    step = widgets.Button(description='Step', button_style='info')
+    ten = widgets.Button(description='10 steps')
+    reset = widgets.Button(description='Reset')
+    new_start = widgets.Button(description='Random start')
+    work = widgets.HTML()
+    table = widgets.HTML()
+    out = _figure_area()
+    state = {'start': start, 'path': [start]}
+
+    def set_menu():
+        fixed = choice.value == 'fixed'
+        values = FIXED_STEP_SIZES if fixed else CURVE_LEARNING_RATES
+        size.description = 'step size' if fixed else 'learning rate η'
+        size.options = [(f'{d:g}', d) for d in values]
+        size.value = 0.25
+
+    def describe(m):
+        if m == 0:
+            return 'the slope is 0, so we are at the bottom: stop'
+        side = 'positive' if m > 0 else 'negative'
+        way = 'left' if m > 0 else 'right'
+        return f'{side}, so downhill is to the <b>{way}</b>'
+
+    def step_lines(a):
+        """The arithmetic for one step from a, after the slope line."""
+        m, d = slope_at(a), delta(a)
+        if choice.value == 'fixed':
+            return [f'&nbsp;&nbsp;slope: 2({_fmt(a)} − 4) = {signed(m)}, {describe(m)}',
+                    f'&nbsp;&nbsp;new x = {_fmt(a)} {"−" if d < 0 else "+"} '
+                    f'{_fmt(size.value)} = <b>{_fmt(a + d)}</b>']
+        return [f'&nbsp;&nbsp;slope: 2({_fmt(a)} − 4) = {signed(m)}',
+                f'&nbsp;&nbsp;step: Δx = −η × slope = −{_fmt(size.value)} × ({signed(m)}) = '
+                f'<b>{signed(d)}</b>',
+                f'&nbsp;&nbsp;new x = x + Δx = {_fmt(a)} {"−" if d < 0 else "+"} '
+                f'{_fmt(abs(d))} = <b>{_fmt(a + d)}</b>']
+
+    def redraw():
+        path = state['path']
+        x = path[-1]
+        m = slope_at(x)
+        fixed = choice.value == 'fixed'
+        point = lambda v: f'f({_fmt(v)}) = ({_fmt(v)} − 4)² + 2 = {_fmt(f(v))}'
+        if len(path) > 1:
+            a = path[-2]
+            lines = ([f'<b>Step {len(path) - 1}</b>, starting from x = {_fmt(a)}:',
+                      f'&nbsp;&nbsp;point on the curve: {point(a)}']
+                     + step_lines(a)
+                     + [f'&nbsp;&nbsp;new point: <b>{point(x)}</b>'])
+        else:
+            lines = [f'<b>Start</b> at x = {_fmt(x)}:',
+                     f'&nbsp;&nbsp;point on the curve: {point(x)}',
+                     f'&nbsp;&nbsp;slope: 2({_fmt(x)} − 4) = {signed(m)}, {describe(m)}',
+                     '&nbsp;&nbsp;Click <b>Step</b> to move.']
+        work.value = _html('<br>'.join(lines))
+
+        def move(k, a):
+            if fixed:
+                return 'left' if path[k + 1] < a else 'right'
+            return signed(path[k + 1] - a)
+        rows = ''.join(
+            f'<tr><td>{k}</td><td>{_fmt(a)}</td><td>{_fmt(f(a))}</td>'
+            f'<td>{signed(slope_at(a))}</td><td>{move(k, a)}</td><td>{_fmt(path[k + 1])}</td></tr>'
+            for k, a in enumerate(path[:-1]))
+        head = ''.join(f'<th style="padding: 0 14px;">{h}</th>' for h in
+                       ('step', 'x', 'f(x)', 'slope', 'move' if fixed else 'Δx = −η × slope',
+                        'new x'))
+        table.value = _html(f'<table style="text-align: center;"><tr>{head}</tr>{rows}</table>'
+                            if rows else '')
+
+        def draw():
+            fig, ax = subplots(figsize=(11, 6))
+            ax.plot(grid, f(grid), color='black', lw=2.5)
+            p = np.array(path)
+            ax.plot(p[:-1], f(p[:-1]), 'o', ms=10, color=PATH_COLOR, alpha=0.3, mec='none')
+            if len(p) > 1:
+                # Old point down to the x axis, step along it, then up to the new point.
+                a = p[-2]
+                head = dict(arrowstyle='-|>', lw=2, color=PATH_COLOR, mutation_scale=22)
+                ax.plot([a, a], [f(a), 0.5], ':', lw=2.5, color=PATH_COLOR)
+                ax.annotate('', xy=(a, 0), xytext=(a, 0.6), arrowprops=head)
+                ax.plot([x, x], [0, f(x) - 0.5], ':', lw=2.5, color=PATH_COLOR)
+                ax.annotate('', xy=(x, f(x) - 0.3), xytext=(x, f(x) - 0.9), arrowprops=head)
+                ax.plot([a, a], [0, -0.8], color='black', lw=1.5)
+                ax.plot([x, x], [0, -0.8], color='black', lw=1.5)
+                tiny = abs(x - a) < 0.2   # an arrowhead would be wider than the step
+                ax.annotate('', xy=(x, -0.6), xytext=(a, -0.6),
+                            arrowprops=dict(arrowstyle='-' if tiny else '-|>', lw=2.5,
+                                            color='black',
+                                            mutation_scale=16, shrinkA=0, shrinkB=0))
+                label = (f'Δx = {signed(x - a)}' if fixed else
+                         f'Δx = −{_fmt(size.value)} × ({signed(slope_at(a))}) = {signed(x - a)}')
+                ax.text(np.clip((a + x) / 2, 1.5, 6.5), -1.1, label,
+                        ha='center', va='top', fontsize=14)
+            half = min(1.2, 3 / max(abs(m), 1e-9))
+            ax.plot([x - half, x + half], [f(x) - m * half, f(x) + m * half],
+                    color=SLICE_COLORS[0], lw=3, label=f'tangent line: slope = {signed(m)}')
+            ax.plot(x, f(x), 'o', ms=15, color=PATH_COLOR, mec='black')
+            ax.axhline(0, color='0.3', lw=1)
+            ax.set_xlim(0, 8)
+            ax.set_ylim(-2.6, 18)
+            ax.set_yticks(range(0, 19, 2))
+            ax.set_xlabel('x')
+            ax.set_ylabel('f(x)')
+            n = len(p) - 1
+            what = f'Fixed steps of {_fmt(size.value)}' if fixed else f'η = {_fmt(size.value)}'
+            off = '' if 0 <= x <= 8 else ' (off the plot)'
+            ax.set_title(f'{what}: {n} step{"" if n == 1 else "s"} so far, '
+                         f'x = {_fmt(x)}{off}')
+            ax.legend(loc='upper center')
+            fig.tight_layout()
+            return fig
+        _show(out, draw, size_percent)
+
+    def take_steps(n):
+        for _ in range(n):
+            x = state['path'][-1]
+            if slope_at(x) == 0:
+                break
+            state['path'].append(round(x + delta(x), 10))
+        redraw()
+
+    def start_over(change=None):
+        state['path'] = [state['start']]
+        redraw()
+
+    def random_start(button):
+        state['start'] = float(np.round(rng.uniform(0.5, 7.5), 2))
+        start_over()
+
+    def switch_mode(change):
+        size.unobserve(start_over, names='value')
+        set_menu()
+        size.observe(start_over, names='value')
+        start_over()
+
+    set_menu()
+    step.on_click(lambda b: take_steps(1))
+    ten.on_click(lambda b: take_steps(10))
+    reset.on_click(start_over)
+    new_start.on_click(random_start)
+    size.observe(start_over, names='value')
+    choice.observe(switch_mode, names='value')
+    redraw()
+    controls = widgets.HBox([size, step, ten, reset, new_start])
+    display(widgets.VBox(([choice] if show_toggle else []) + [controls, work, out, table]))
+
+
+def fixed_step_demo(start=6.3, seed=463, size_percent=100):
+    """Walk downhill on f(x) = (x − 4)² + 2 by moving a fixed distance each click, in
+    the direction the slope's sign says is downhill.
+    size_percent shows the figure at that percent of its full size (80 = 20% smaller)."""
+    _curve_stepper(start, 'fixed', show_toggle=False, seed=seed, size_percent=size_percent)
+
+
+def scaled_step_demo(start=7.4, seed=463, size_percent=100):
+    """Walk downhill on f(x) = (x − 4)² + 2 with steps Δx = −η × slope, with a toggle
+    back to fixed-size steps for comparison.
+    size_percent shows the figure at that percent of its full size (80 = 20% smaller)."""
+    _curve_stepper(start, 'scaled', show_toggle=True, seed=seed, size_percent=size_percent)
+
+
+def two_spaces_demo(ad):
+    """A β₁ slider moves the line through the Advertising data (left) and a point along
+    the curve of mean squared error against β₁ (right). β₀ is fixed at its
+    least-squares value."""
+    x, y = ad['TV'].to_numpy(), ad['sales'].to_numpy()
+    beta0, best_beta1 = _least_squares(x, y)
+    grid = np.linspace(0, 0.1, 401)
+    curve = _mse(beta0, grid, x, y)
+    beta1 = widgets.FloatSlider(value=0.02, min=0, max=0.1, step=0.001, readout_format='.3f',
+                                description='β₁', layout=widgets.Layout(width='600px'))
+    readout = widgets.HTML()
+    out = _figure_area()
+
+    def update(change=None):
+        b1 = beta1.value
+        loss = float(_mse(beta0, b1, x, y))
+        readout.value = _html(f'β₁ = <b>{b1:.3f}</b>, loss = <b>{loss:.2f}</b><br>'
+                              'Each point on the right-hand curve is a whole line on the left.')
+
+        def draw():
+            fig, (ax_d, ax_p) = subplots(1, 2, figsize=(16, 6))
+            ax_d.plot(x, y, 'o', color='0.55', ms=6, alpha=0.7)
+            xs = np.array([0, x.max() * 1.05])
+            ax_d.plot(xs, beta0 + b1 * xs, color=PATH_COLOR, lw=3)
+            ax_d.set_xlabel('TV budget ($1,000s)')
+            ax_d.set_ylabel('sales (1,000s of units)')
+            ax_d.set_title(f'Data space: the line sales = {beta0:.2f} + {b1:.3f} × TV')
+
+            ax_p.plot(grid, curve, color='black', lw=2.5)
+            ax_p.plot(b1, loss, 'o', ms=14, color=PATH_COLOR, mec='black')
+            ax_p.set_xlabel('β₁ (slope)')
+            ax_p.set_ylabel('loss (mean squared error)')
+            ax_p.set_ylim(0, curve.max() * 1.05)
+            ax_p.set_title('Parameter space: the loss for every β₁')
+            fig.tight_layout()
+            return fig
+        _show(out, draw)
+
+    beta1.observe(update, names='value')
+    update()
+    display(widgets.VBox([beta1, readout, out]))
+
+
+# --- Demo 3: walking downhill by hand ----------------------------------------
+
+def descent_by_hand_demo(etas=(0.05, 0.25, 0.5), start=0.0):
+    """Step-by-step gradient descent on L(β) = (β − 3)², with a table that grows one row
+    per step. Changing the learning rate starts over."""
+    eta = widgets.Dropdown(options=[(str(e), e) for e in etas], value=0.25, description='η',
+                           layout=widgets.Layout(width='160px'))
+    step = widgets.Button(description='Step', button_style='info')
+    reset = widgets.Button(description='Reset')
+    table = widgets.HTML()
+    out = _figure_area()
+    state = {'beta_path': [start]}
+
+    def redraw():
+        beta_path = np.array(state['beta_path'])
+        t = len(beta_path) - 1
+        beta = beta_path[-1]
+        slope = _toy_slope(beta)
+        beta_next = beta - eta.value * slope
+
+        rows = ''.join(
+            f'<tr><td>{k}</td><td>{_fmt(b)}</td><td>{_fmt(_toy_slope(b))}</td>'
+            f'<td>{_fmt(eta.value * _toy_slope(b))}</td><td>{_fmt(beta_path[k + 1])}</td></tr>'
+            for k, b in enumerate(beta_path[:-1]))
+        head = ''.join(f'<th style="padding: 0 14px;">{h}</th>' for h in
+                       ('t', 'β⁽ᵗ⁾', 'slope 2(β⁽ᵗ⁾ − 3)', 'η × slope', 'β⁽ᵗ⁺¹⁾'))
+        table.value = _html(f'<table style="text-align: center;"><tr>{head}</tr>{rows}</table>'
+                            + ('' if rows else '<i>Click Step to take the first step.</i>'))
+
+        def draw():
+            fig, ax = subplots(figsize=(11, 6))
+            grid = np.linspace(-0.5, 6.5, 300)
+            ax.plot(grid, _toy_loss(grid), color='black', lw=2.5)
+            ax.plot(beta_path[:-1], _toy_loss(beta_path[:-1]), 'o', ms=10, color=PATH_COLOR,
+                    alpha=0.3, mec='none')
+            half = 0.8
+            ax.plot([beta - half, beta + half],
+                    [_toy_loss(beta) - slope * half, _toy_loss(beta) + slope * half],
+                    color=SLICE_COLORS[0], lw=3, label=f'tangent: slope = {_fmt(slope)}')
+            ax.annotate('', xy=(beta_next, _toy_loss(beta_next)), xytext=(beta, _toy_loss(beta)),
+                        arrowprops=dict(arrowstyle='->', lw=2.5, color=PATH_COLOR))
+            ax.plot(beta, _toy_loss(beta), 'o', ms=15, color=PATH_COLOR, mec='black')
+            ax.plot(GD_TARGET, 0, '*', ms=20, color=BEST_COLOR, mec='black')
+            ax.set_xlim(-0.5, 6.5)
+            ax.set_ylim(-1, 13)
+            ax.set_xlabel('β')
+            ax.set_ylabel('L(β) = (β − 3)²')
+            ax.set_title(f't = {t}:  β⁽ᵗ⁾ = {_fmt(beta)},  L = {_fmt(_toy_loss(beta))}')
+            ax.legend(loc='upper center')
+            fig.tight_layout()
+            return fig
+        _show(out, draw)
+
+    def take_step(button):
+        b = state['beta_path'][-1]
+        state['beta_path'].append(b - eta.value * _toy_slope(b))
+        redraw()
+
+    def start_over(change=None):
+        state['beta_path'] = [start]
+        redraw()
+
+    step.on_click(take_step)
+    reset.on_click(start_over)
+    eta.observe(start_over, names='value')
+    redraw()
+    display(widgets.VBox([widgets.HBox([eta, step, reset]), out, table]))
+
+
+# --- Demo 4: the learning rate, and when to stop -------------------------------
+
+LEARNING_RATES = ((0.05, 'too small: slow'), (0.25, 'about right'),
+                  (0.5, 'exactly right (only for this loss)'), (0.9, 'too big: zigzags in'),
+                  (1.0, 'on the edge: never settles'), (1.05, 'too big: blows up'))
+
+
+def learning_rate_demo(steps=30, tol=0.001, rates=LEARNING_RATES):
+    """Thirty steps of gradient descent on L(β) = (β − 3)² for each learning-rate preset:
+    the path on the parabola (left) and the loss at every step (right, log scale)."""
+    labels = dict(rates)
+    paths = {eta: _toy_path(eta, steps) for eta, _ in rates}
+    eta = widgets.ToggleButtons(options=[(str(e), e) for e, _ in rates], value=0.25,
+                                description='η')
+    readout = widgets.HTML()
+    out = _figure_area()
+
+    def update(change=None):
+        beta_path = paths[eta.value]
+        loss = _toy_loss(beta_path)
+        changed = np.abs(np.diff(loss)) < tol
+        stop = int(np.argmax(changed)) + 1 if changed.any() else None
+        readout.value = _html(
+            f'<b>η = {eta.value}: {labels[eta.value]}</b><br>'
+            + (f'Stopped at step {stop}: the loss changed by less than {tol}.' if stop else
+               f'Did not stop within {steps} steps.'))
+
+        def draw():
+            fig, (ax_p, ax_l) = subplots(1, 2, figsize=(16, 6))
+            lo, hi = min(beta_path.min(), 0) - 0.5, max(beta_path.max(), 6) + 0.5
+            grid = np.linspace(lo, hi, 400)
+            ax_p.plot(grid, _toy_loss(grid), color='black', lw=2)
+            for a, b in zip(beta_path[:-1], beta_path[1:]):
+                ax_p.annotate('', xy=(b, _toy_loss(b)), xytext=(a, _toy_loss(a)),
+                              arrowprops=dict(arrowstyle='->', lw=1.5, color=PATH_COLOR,
+                                              alpha=0.8))
+            ax_p.plot(beta_path, loss, 'o', ms=6, color=PATH_COLOR)
+            ax_p.plot(beta_path[0], loss[0], 's', ms=12, color=PATH_COLOR, mec='black',
+                      label='start, β⁽⁰⁾ = 0')
+            ax_p.plot(GD_TARGET, 0, '*', ms=20, color=BEST_COLOR, mec='black', label='minimum')
+            ax_p.set_xlim(lo, hi)
+            ax_p.set_xlabel('β')
+            ax_p.set_ylabel('L(β)')
+            ax_p.set_title(f'The path on the parabola (η = {eta.value})')
+            ax_p.legend(loc='upper center')
+
+            ax_l.plot(np.arange(steps + 1), np.clip(loss, 1e-6, 1e4), 'o-', color=PATH_COLOR,
+                      lw=2, ms=5)
+            if stop:
+                ax_l.axvline(stop, color=BEST_COLOR, ls=':', lw=2, label=f'stop at step {stop}')
+                ax_l.legend(loc='upper right')
+            ax_l.set_yscale('log')
+            ax_l.set_ylim(5e-7, 2e4)
+            ax_l.set_xlim(-0.5, steps + 0.5)
+            ax_l.set_xlabel('step t')
+            ax_l.set_ylabel('loss (log scale)')
+            ax_l.set_title('The loss at every step')
+            fig.tight_layout()
+            return fig
+        _show(out, draw)
+
+    eta.observe(update, names='value')
+    update()
+    display(widgets.VBox([eta, readout, out]))
+
+
+# --- Demo 5a and 5b: two parameters ------------------------------------------
+
+def _bowl_for(x, y, half_width=8, n=81, levels=None, slice_top=None):
+    """The mean-squared-error bowl for y on x, on a square grid centered on the minimum."""
+    best = _least_squares(x, y)
+    g0 = np.linspace(best[0] - half_width, best[0] + half_width, n)
+    g1 = np.linspace(best[1] - half_width, best[1] + half_width, n)
+    B0, B1 = np.meshgrid(g0, g1)
+    Z = _mse(B0, B1, x, y)
+    return SimpleNamespace(x=x, y=y, best=best, loss_min=float(_mse(*best, x, y)),
+                           g0=g0, g1=g1, B0=B0, B1=B1, Z=Z,
+                           levels=np.arange(20, 141, 20) if levels is None else levels,
+                           slice_top=float(Z.max()) if slice_top is None else slice_top)
+
+
+def _bowl(ad, half_width=8, n=81):
+    """The mean-squared-error bowl for sales on standardized TV."""
+    return _bowl_for(_standardized_tv(ad), ad['sales'].to_numpy(), half_width, n)
+
+
+def surface_and_contour(ad):
+    """The same loss as a rotatable 3-D surface (left) and a contour map (right), with a
+    height slider that slices the surface and highlights the matching contour line."""
+    s = _bowl(ad)
+    step = s.levels[1] - s.levels[0]
+    contour_style = dict(start=s.levels[0], end=s.levels[-1], size=step)
+    top = float(s.Z.max())
+    fig = make_subplots(rows=1, cols=2, column_widths=[0.55, 0.45],
+                        specs=[[{'type': 'scene'}, {'type': 'xy'}]],
+                        subplot_titles=('The loss surface (drag to rotate)',
+                                        'The contour map: the surface seen from above'))
+    fig.add_trace(go.Surface(x=s.g0, y=s.g1, z=s.Z, showscale=False, opacity=0.95,
+                             contours=dict(z=dict(show=True, color='black', width=3,
+                                                  **contour_style)),
+                             hoverinfo='skip', colorscale='Viridis', cmin=0, cmax=top), 1, 1)
+    fig.add_trace(go.Scatter3d(x=[s.best[0]], y=[s.best[1]], z=[s.loss_min], mode='markers',
+                               marker=dict(size=7, color=BEST_COLOR, symbol='diamond'),
+                               hoverinfo='skip'), 1, 1)
+    fig.add_trace(go.Contour(x=s.g0, y=s.g1, z=s.Z, contours=dict(coloring='fill',
+                                                                  **contour_style),
+                             line=dict(color='black', width=1.5), hoverinfo='skip',
+                             colorbar=dict(title='loss'), colorscale='Viridis', zmin=0, zmax=top),
+                  1, 2)
+    fig.add_trace(go.Scatter(x=[s.best[0]], y=[s.best[1]], mode='markers', hoverinfo='skip',
+                             marker=dict(size=18, color=BEST_COLOR, symbol='star',
+                                         line=dict(color='black', width=1))), 1, 2)
+    fixed = len(fig.data)
+
+    for level in s.levels:
+        fig.add_trace(go.Surface(x=s.g0, y=s.g1, z=np.full_like(s.Z, level), opacity=0.4,
+                                 colorscale=[[0, 'white'], [1, 'white']], showscale=False,
+                                 hoverinfo='skip', visible=False), 1, 1)
+        fig.add_trace(go.Contour(x=s.g0, y=s.g1, z=s.Z, showscale=False, hoverinfo='skip',
+                                 contours=dict(coloring='none', start=level, end=level, size=1),
+                                 line=dict(color=PATH_COLOR, width=5), visible=False), 1, 2)
+
+    steps = []
+    for k, level in enumerate(s.levels):
+        visible = [True] * fixed + [False] * (2 * len(s.levels))
+        visible[fixed + 2 * k] = visible[fixed + 2 * k + 1] = True
+        steps.append(dict(method='restyle', label=f'{level}', args=[{'visible': visible}]))
+    steps.insert(0, dict(method='restyle', label='off',
+                         args=[{'visible': [True] * fixed + [False] * (2 * len(s.levels))}]))
+
+    fig.update_layout(
+        height=620, showlegend=False, margin=dict(l=20, r=20, t=60, b=20),
+        scene=dict(xaxis_title='β₀', yaxis_title='β₁', zaxis_title='loss',
+                   camera=dict(eye=dict(x=1.5, y=-1.6, z=1.0))),
+        sliders=[dict(active=0, steps=steps, pad=dict(t=40),
+                      currentvalue=dict(prefix='slice the surface at loss = '))],
+    )
+    fig.update_xaxes(title_text='β₀', row=1, col=2)
+    fig.update_yaxes(title_text='β₁', scaleanchor='x', scaleratio=1, row=1, col=2)
+    return fig
+
+
+def _draw_bowl_contours(ax, s):
+    ax.contour(s.B0, s.B1, s.Z, levels=s.levels, cmap='viridis', linewidths=1.5)
+    ax.plot(*s.best, '*', ms=22, color=BEST_COLOR, mec='black')
+    ax.set_xlim(s.g0[0], s.g0[-1])
+    ax.set_ylim(s.g1[0], s.g1[-1])
+    ax.set_aspect('equal')
+    ax.set_xlabel('β₀')
+    ax.set_ylabel('β₁')
+
+
+def partial_slopes_demo(ad, start=(9.0, 7.0), arrow_scale=0.25):
+    """β₀ and β₁ sliders set a point on the contour map. Two small plots show the loss
+    when only β₀ moves and when only β₁ moves, with their tangent slopes; the gradient
+    and its opposite are drawn as arrows."""
+    _slopes_widget(_bowl(ad), start, arrow_scale)
+
+
+def unscaled_slopes_demo(ad, start=(0.0, 0.0), arrow_scale=0.1):
+    """The partial-slopes widget for sales on TV ÷ 100 (not standardized): the bowl is a
+    long tilted valley, and the readout adds the ratio of the two slopes. Only the
+    downhill vector −∇L is drawn, with a toggle that splits it into its β₀ and β₁ parts;
+    each slice plot shows its own part instead of a tangent line."""
+    x, y = ad['TV'].to_numpy() / 100, ad['sales'].to_numpy()
+    best = _least_squares(x, y)
+    loss_min = float(_mse(*best, x, y))
+    levels = loss_min + np.array([1, 2, 4, 8, 16, 32, 64, 128, 256])
+    _slopes_widget(_bowl_for(x, y, levels=levels, slice_top=250), start, arrow_scale,
+                   show_ratio=True, feature='TV ÷ 100', components=True)
+
+
+def _slopes_widget(s, start, arrow_scale, show_ratio=False, feature=None, components=False):
+    style = dict(step=0.5, layout=widgets.Layout(width='450px'))
+    beta0 = widgets.FloatSlider(value=start[0], min=round(s.g0[0]), max=round(s.g0[-1]),
+                                description='β₀', **style)
+    beta1 = widgets.FloatSlider(value=start[1], min=round(s.g1[0]), max=round(s.g1[-1]),
+                                description='β₁', **style)
+    view = widgets.ToggleButtons(options=[('downhill vector −∇L', 'sum'),
+                                          ('components + sum', 'both'),
+                                          ('components only', 'parts')], value='sum')
+    readout = widgets.HTML()
+    out = _figure_area()
+
+    def label_at(ax, spot, text, color):
+        spot = (np.clip(spot[0], s.g0[0] + 2.5, s.g0[-1] - 2.5),
+                np.clip(spot[1], s.g1[0] + 0.8, s.g1[-1] - 0.8))
+        ax.text(*spot, text, color=color, fontsize=15, fontweight='bold', ha='center',
+                va='center', bbox=dict(facecolor='white', edgecolor='none', alpha=0.8))
+
+    def draw_parts(ax, beta, grad):
+        """The downhill vector and/or its β₀ and β₁ parts, by the view toggle."""
+        down = -arrow_scale * grad
+        arrow = dict(arrowstyle='-|>', lw=3, mutation_scale=25, zorder=5)
+        legend = []
+        if view.value != 'sum':
+            for j, name in enumerate(('β₀ part: −∂L/∂β₀', 'β₁ part: −∂L/∂β₁')):
+                part = np.zeros(2)
+                part[j] = down[j]
+                if abs(part[j]) > 1e-9:
+                    ax.add_patch(FancyArrowPatch(beta, beta + part, color=SLICE_COLORS[j],
+                                                 **arrow))
+                legend.append(Line2D([], [], color=SLICE_COLORS[j], lw=3, label=name))
+            if view.value == 'both':
+                corner = beta + down
+                ax.plot([beta[0] + down[0], corner[0], beta[0]],
+                        [beta[1], corner[1], beta[1] + down[1]], '--', color='0.4', lw=1.5)
+        if view.value != 'parts' and np.hypot(*down) > 1e-9:
+            ax.add_patch(FancyArrowPatch(beta, beta + down, color=DOWNHILL_COLOR, **arrow))
+            if view.value == 'sum' and np.hypot(*down) >= 1:
+                label_at(ax, beta + down + 0.9 * down / np.hypot(*down), 'downhill: −∇L',
+                         DOWNHILL_COLOR)
+        if view.value == 'both':
+            legend.append(Line2D([], [], color=DOWNHILL_COLOR, lw=3, label='sum: downhill −∇L'))
+        if legend:
+            ax.legend(handles=legend, loc='upper right', framealpha=0.95)
+
+    def update(change=None):
+        beta = np.array([beta0.value, beta1.value])
+        grad = _mse_gradient(beta, s.x, s.y)
+        loss = float(_mse(*beta, s.x, s.y))
+        ratio = ''
+        if show_ratio and abs(grad[0]) > 1e-9:
+            ratio = f'<br>∂L/∂β₁ ÷ ∂L/∂β₀ = <b>{_fmt(grad[1] / grad[0], 2)}</b>'
+        readout.value = _html(
+            f'At β₀ = {beta[0]:.1f}, β₁ = {beta[1]:.1f}: loss = {loss:.1f}<br>'
+            f'<b>∇L = (∂L/∂β₀, ∂L/∂β₁) = ({_fmt(grad[0], 2)}, {_fmt(grad[1], 2)})</b>'
+            + ratio)
+
+        def draw():
+            fig = figure(figsize=(16, 7.5))
+            grid = fig.add_gridspec(2, 2, width_ratios=[1.3, 1])
+            ax = fig.add_subplot(grid[:, 0])
+            _draw_bowl_contours(ax, s)
+            faint = dict(lw=1.5, alpha=0.5) if components else dict(lw=2.5)
+            ax.axhline(beta[1], color=SLICE_COLORS[0], **faint)
+            ax.axvline(beta[0], color=SLICE_COLORS[1], **faint)
+            size = np.hypot(*grad)
+            if components:
+                draw_parts(ax, beta, grad)
+            for sign, label, color in (() if components else
+                                       ((1, '∇L', UPHILL_COLOR), (-1, 'downhill: −∇L', DOWNHILL_COLOR))):
+                if size < 1e-6:
+                    break
+                tip = beta + sign * arrow_scale * grad
+                ax.add_patch(FancyArrowPatch(beta, tip, arrowstyle='-|>', lw=3, color=color,
+                                             mutation_scale=25))
+                if arrow_scale * size < 1:   # too short to label without covering the point
+                    continue
+                # Labels stay inside the frame even when the arrow runs off the edge.
+                spot = tip + sign * 0.9 * grad / size
+                spot = (np.clip(spot[0], s.g0[0] + 2.5, s.g0[-1] - 2.5),
+                        np.clip(spot[1], s.g1[0] + 0.8, s.g1[-1] - 0.8))
+                ax.text(*spot, label, color=color, fontsize=15,
+                        fontweight='bold', ha='center', va='center',
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.8))
+            ax.plot(*beta, 'o', ms=14, color='white', mec='black', mew=2)
+            ax.set_title(('' if feature is None else f'Feature: {feature}.  ')
+                         + f'Loss contours (arrows drawn at {arrow_scale:g}× length)')
+
+            for row, j in enumerate((0, 1)):
+                a = fig.add_subplot(grid[row, 1])
+                g = (s.g0, s.g1)[j]
+                along = _mse(g, beta[1], s.x, s.y) if j == 0 else _mse(beta[0], g, s.x, s.y)
+                a.plot(g, along, color=SLICE_COLORS[j], lw=3)
+                if components:
+                    if abs(grad[j]) > 1e-9:
+                        a.add_patch(FancyArrowPatch(
+                            (beta[j], loss), (beta[j] - arrow_scale * grad[j], loss),
+                            arrowstyle='-|>', lw=3, mutation_scale=22, color=SLICE_COLORS[j],
+                            zorder=5))
+                else:
+                    half = 2.0
+                    a.plot([beta[j] - half, beta[j] + half],
+                           [loss - grad[j] * half, loss + grad[j] * half], color='black', lw=2)
+                a.plot(beta[j], loss, 'o', ms=11, color='white', mec='black', mew=2)
+                a.set_xlim(g[0], g[-1])
+                a.set_ylim(0, s.slice_top)
+                a.set_xlabel(f'β{"₀₁"[j]}')
+                a.set_ylabel('loss')
+                a.set_title(f'Move β{"₀₁"[j]} only:  ∂L/∂β{"₀₁"[j]} = {_fmt(grad[j], 2)}',
+                            color=SLICE_COLORS[j])
+            fig.tight_layout()
+            return fig
+        _show(out, draw)
+
+    beta0.observe(update, names='value')
+    beta1.observe(update, names='value')
+    view.observe(update, names='value')
+    update()
+    display(widgets.VBox([widgets.HBox([beta0, beta1])] + ([view] if components else [])
+                         + [readout, out]))
+
+
+# --- Demo 6: descent on a contour plot, and why scaling matters ---------------
+
+SCALING_VERSIONS = ('Standardized TV', 'Unscaled TV (TV ÷ 100)')
+LIMIT_SHARES = (0.10, 0.50, 0.95)
+
+
+def _descent_path(x, y, eta, start=(0.0, 0.0), max_steps=300, within=0.001):
+    """Gradient descent on mean squared error, stopping once the loss is within
+    `within` (as a share) of the minimum. Returns the path and the step it got there,
+    or None if it didn't within max_steps."""
+    best = _least_squares(x, y)
+    target = float(_mse(*best, x, y)) * (1 + within)
+    beta_path = [np.array(start, dtype=float)]
+    for t in range(max_steps):
+        if float(_mse(*beta_path[-1], x, y)) <= target:
+            return np.array(beta_path), t
+        beta_path.append(beta_path[-1] - eta * _mse_gradient(beta_path[-1], x, y))
+    done = float(_mse(*beta_path[-1], x, y)) <= target
+    return np.array(beta_path), (max_steps if done else None)
+
+
+def _scaling_setup(x, y, shares=LIMIT_SHARES, n=121):
+    """Learning-rate limit, presets, descent paths, and a contour grid for one version
+    of the TV feature."""
+    X = np.column_stack([np.ones_like(x), x])
+    hessian = 2 / len(x) * X.T @ X
+    limit = 2 / np.linalg.eigvalsh(hessian).max()
+    best = _least_squares(x, y)
+    runs = {share: _descent_path(x, y, share * limit) for share in shares}
+    points = np.vstack([best, [0, 0]] + [path for path, _ in runs.values()])
+    lo, hi = points.min(axis=0), points.max(axis=0)
+    pad = 0.12 * (hi - lo).max()
+    g0 = np.linspace(lo[0] - pad, hi[0] + pad, n)
+    g1 = np.linspace(lo[1] - pad, hi[1] + pad, n)
+    B0, B1 = np.meshgrid(g0, g1)
+    Z = _mse(B0, B1, x, y)
+    loss_min = float(_mse(*best, x, y))
+    levels = loss_min + (Z.max() - loss_min) * np.geomspace(1e-3, 1, 18)
+    return SimpleNamespace(limit=limit, best=best, runs=runs, B0=B0, B1=B1, Z=Z, levels=levels)
+
+
+def scaling_demo(ad, shares=LIMIT_SHARES):
+    """Gradient descent from (0, 0) on the contour map, with standardized TV or TV ÷ 100.
+    Each learning-rate preset is a share of the largest stable learning rate for that
+    version; the step slider replays the path."""
+    y = ad['sales'].to_numpy()
+    setups = {SCALING_VERSIONS[0]: _scaling_setup(_standardized_tv(ad), y, shares),
+              SCALING_VERSIONS[1]: _scaling_setup(ad['TV'].to_numpy() / 100, y, shares)}
+    version = widgets.ToggleButtons(options=SCALING_VERSIONS, description='feature:')
+    share = widgets.ToggleButtons(options=[(f'{s:.0%} of the limit', s) for s in shares],
+                                  value=0.5, description='η:')
+    step = widgets.IntSlider(value=0, min=0, max=1, description='steps shown',
+                             style={'description_width': '100px'},
+                             layout=widgets.Layout(width='600px'))
+    readout = widgets.HTML()
+    out = _figure_area()
+    state = {'resetting': False}
+
+    def run():
+        return setups[version.value].runs[share.value]
+
+    def choose(change=None):
+        path, _ = run()
+        state['resetting'] = True
+        step.max = len(path) - 1
+        step.value = len(path) - 1
+        state['resetting'] = False
+        update()
+
+    def update(change=None):
+        if state['resetting']:
+            return
+        s = setups[version.value]
+        path, reached = run()
+        shown = path[:step.value + 1]
+        eta = share.value * s.limit
+        reached_text = (f'<b>{reached} step{"s" if reached != 1 else ""}</b>' if reached is not None
+                        else f'more than {len(path) - 1} steps')
+        readout.value = _html(
+            f'{version.value}: largest stable η = {s.limit:.4g}, so η = {eta:.4g}<br>'
+            f'Steps to get within 0.1% of the minimum loss, starting from (0, 0): {reached_text}')
+
+        def draw():
+            fig, ax = subplots(figsize=(14, 7))
+            ax.contour(s.B0, s.B1, s.Z, levels=s.levels, cmap='viridis', linewidths=1.3)
+            ax.plot(*s.best, '*', ms=24, color=BEST_COLOR, mec='black', label='minimum')
+            ax.plot(shown[:, 0], shown[:, 1], 'o-', color=PATH_COLOR, lw=2, ms=6,
+                    label='gradient descent')
+            ax.plot(0, 0, 's', ms=13, color=PATH_COLOR, mec='black', label='start (0, 0)')
+            ax.set_xlim(s.B0.min(), s.B0.max())
+            ax.set_ylim(s.B1.min(), s.B1.max())
+            ax.set_aspect('equal')
+            ax.set_xlabel('β₀')
+            ax.set_ylabel('β₁')
+            ax.set_title(f'{version.value}, η = {share.value:.0%} of the limit: '
+                         f'step {step.value} of {len(path) - 1}')
+            ax.legend(loc='best')
+            fig.tight_layout()
+            return fig
+        _show(out, draw)
+
+    version.observe(choose, names='value')
+    share.observe(choose, names='value')
+    step.observe(update, names='value')
+    choose()
+    display(widgets.VBox([version, share, step, readout, out]))
+
+
+# --- Demo 7: fitting logistic regression ourselves ---------------------------
+
+def plot_logistic_loss(losses, eta, show_steps=300):
+    """The loss recorded at each step of a gradient descent run, flattening out."""
+    losses = np.asarray(losses)
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(11, 5))
+        t = np.arange(min(show_steps, len(losses)))
+        ax.plot(t, losses[t], color=PATH_COLOR, lw=3)
+        ax.set_xlabel('step t')
+        ax.set_ylabel('loss (average negative\nlog-likelihood)')
+        ax.set_title(f'Gradient descent on the Default data, η = {eta:g}: '
+                     f'the first {len(t)} steps')
+        fig.tight_layout()
+    return fig
+
+
+def plot_logistic_descent_path(beta_path, x, y, best, show_steps=300, n=120):
+    """A descent path (one (β₀, β₁) row per step) on the contour map of the average
+    negative log-likelihood of y on x, with `best` = scikit-learn's (β₀, β₁) starred."""
+    with rc_context(BIG_FONTS):
+        path = np.asarray(beta_path)[:show_steps + 1]
+        g0 = np.linspace(-8, 1, n)
+        g1 = np.linspace(-0.5, 4, n)
+        B0, B1 = np.meshgrid(g0, g1)
+        Z = _mean_nll(B0, B1, np.asarray(x), np.asarray(y))
+        levels = Z.min() + (Z.max() - Z.min()) * np.geomspace(2e-3, 1, 20)
+        fig, ax = subplots(figsize=(11, 6))
+        ax.contour(B0, B1, Z, levels=levels, cmap='viridis', linewidths=1.2)
+        ax.plot(path[:, 0], path[:, 1], 'o-', ms=3, color=PATH_COLOR, lw=2,
+                label=f'gradient descent, first {len(path) - 1} steps')
+        ax.plot(0, 0, 's', ms=12, color=PATH_COLOR, mec='black', label='start (0, 0)')
+        ax.plot(*best, '*', ms=22, color=BEST_COLOR, mec='black',
+                label="scikit-learn's answer")
+        ax.set_xlabel('β₀')
+        ax.set_ylabel('β₁')
+        ax.set_title('The logistic regression loss is a single bowl too')
+        ax.legend(loc='upper right')
+        fig.tight_layout()
+    return fig

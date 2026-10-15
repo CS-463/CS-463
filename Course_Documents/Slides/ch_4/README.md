@@ -11,11 +11,13 @@ It already includes `ipywidgets`.
 
 ## Files you need
 
-Get all three files from this folder and keep them **in the same folder** on your computer:
+Get all five files from this folder and keep them **in the same folder** on your computer:
 
 - `ch_4_demos_1_log_odds_and_logistic_regression.ipynb`
 - `ch_4_demos_2_classification_metrics.ipynb`
+- `gradient_descent_demos.ipynb`
 - `ch_4_demos_helpers.py` (the notebooks import their demos from this file)
+- `Advertising.csv` (data for `gradient_descent_demos.ipynb`)
 
 If you cloned the course repo, run `git pull` to get them.
 
@@ -97,7 +99,8 @@ Colab already has `ipywidgets`, so there's nothing new to install. For each note
 1. Open [Colab](https://colab.research.google.com/) and upload the notebook (**File > Upload
    notebook**).
 2. Click the folder icon in the left sidebar and upload `ch_4_demos_helpers.py`. Without it, the
-   demo cells fail with `ModuleNotFoundError: No module named 'ch_4_demos_helpers'`.
+   demo cells fail with `ModuleNotFoundError: No module named 'ch_4_demos_helpers'`. For
+   `gradient_descent_demos.ipynb`, upload `Advertising.csv` too.
 3. Add this as the first cell and run it once per session:
 
    ```python
@@ -105,8 +108,8 @@ Colab already has `ipywidgets`, so there's nothing new to install. For each note
    %pip install -q --no-deps ISLP
    ```
 
-Uploaded files disappear when the Colab session ends, so re-upload `ch_4_demos_helpers.py` each
-time you come back, and download your notebook (**File > Download > Download .ipynb**) before you
+Uploaded files disappear when the Colab session ends, so re-upload `ch_4_demos_helpers.py` (and `Advertising.csv`)
+each time you come back, and download your notebook (**File > Download > Download .ipynb**) before you
 close the tab.
 
 </details>
