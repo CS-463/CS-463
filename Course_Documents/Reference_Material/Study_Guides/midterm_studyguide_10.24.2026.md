@@ -14,8 +14,7 @@ notebooks through the bootstrap.
 - **Extra credit:** four optional questions at the end. Answer any **two**. A few questions also
   have a small extra-credit part.
 - **No surprises:** every question is a close sibling of a practice question or demo you've
-  already seen. The best way to study is to work the practice questions listed below **on paper**,
-  before you open their answers.
+  already seen. The best way to study is to read the sections suggested below and work the corresponding practice questions **on paper**, before you open their answers.
 
 ## How to use this guide
 
