@@ -730,3 +730,466 @@ def plot_kfold_diagram(n_folds=5):
                      f'validation set')
         fig.tight_layout()
     return fig
+
+
+# --- Bootstrap notebook (ch_5_02): Demos B and C -------------------------------
+
+BOOT_COLORS = {'mean': '#0072B2', 'median': '#E69F00', 'band': '#009E73', 'observed': '#D55E00'}
+WAITS_BIN_WIDTH = 4
+
+
+def waiting_times_demo(waits, scale=10, seed=2027, size_percent=100):
+    """Demo B: a histogram of the waiting times, with the true exponential curve (the
+    recipe) on top. Dashed lines mark the sample's mean and median, as the dashed line marks
+    the data's mean in bootstrap_by_hand_demo; solid lines mark the recipe's true mean
+    (scale) and true median (scale * ln 2).
+
+    New sample from the recipe draws a fresh sample of the same size, to show how much
+    a sample can vary. It only changes the picture; the waits passed in, which the rest
+    of the notebook uses, stay the same. Back to our sample shows them again.
+
+    Returns the widget."""
+    waits = np.asarray(waits, dtype=float)
+    n = len(waits)
+    true_mean, true_median = scale, scale * np.log(2)
+    rng = np.random.default_rng(seed)
+    state = {'sample': waits, 'ours': True, 'count': 0}
+
+    new_sample = widgets.Button(description='New sample from the recipe', button_style='info',
+                                layout=widgets.Layout(width='240px'))
+    ours = widgets.Button(description='Back to our sample', layout=widgets.Layout(width='180px'))
+    out = _figure_area()
+
+    def figure():
+        sample = state['sample']
+        right = max(60, WAITS_BIN_WIDTH * np.ceil(sample.max() / WAITS_BIN_WIDTH))
+        fig, ax = subplots(figsize=(11, 5.5))
+        ax.hist(sample, bins=np.arange(0, right + WAITS_BIN_WIDTH, WAITS_BIN_WIDTH),
+                density=True, color='0.8', edgecolor='white', label=f'the {n} waits')
+        ax.plot(sample, np.zeros(n), '|', color='black', ms=18, mew=1.5)
+        x = np.linspace(0, right, 400)
+        ax.plot(x, np.exp(-x / scale) / scale, color='black', lw=2.5,
+                label=f'the recipe: exponential, mean {scale}')
+        for name, value, true in (('mean', sample.mean(), true_mean),
+                                  ('median', np.median(sample), true_median)):
+            ax.axvline(value, color=BOOT_COLORS[name], lw=2.5, ls='--',
+                       label=f'sample {name} = {value:.1f}')
+            ax.axvline(true, color=BOOT_COLORS[name], lw=3,
+                       label=f'true {name} = {true:.1f}')
+        ax.set_xlim(0, right)
+        ax.set_ylim(bottom=-0.01)
+        ax.set_xlabel('waiting time (minutes)')
+        ax.set_ylabel('density')
+        which = 'Our sample' if state['ours'] else f'New sample {state["count"]}'
+        ax.set_title(f'{which}: {n} waiting times, with the recipe that produced them')
+        ax.legend(loc='upper right')
+        fig.tight_layout()
+        return fig
+
+    def on_new_sample(_):
+        state.update(sample=rng.exponential(scale=scale, size=n), ours=False,
+                     count=state['count'] + 1)
+        _show(out, figure, size_percent)
+
+    def on_ours(_):
+        state.update(sample=waits, ours=True)
+        _show(out, figure, size_percent)
+
+    new_sample.on_click(on_new_sample)
+    ours.on_click(on_ours)
+    _show(out, figure, size_percent)
+    demo = widgets.VBox([widgets.HBox([new_sample, ours]), out])
+    display(demo)
+    return demo
+
+
+from matplotlib.pyplot import figure as new_figure
+
+BOOT_SAMPLE_COLOR = '#CC79A7'   # Okabe-Ito reddish purple, distinct from the median's orange
+BOOT_STAT_BIN_WIDTH = 0.25
+
+
+def waiting_times_bootstrap_demo(waits, B=10_000, seed=463, size_percent=100):
+    """Demo B, bootstrap version: our sample stays fixed, and each bootstrap sample is
+    n draws from it, with replacement.
+
+    Top: our waits (gray histogram, dashed lines at their mean and median) with the
+    current bootstrap sample outlined on top (solid lines at its mean and median).
+    Middle: one tick per wait in our sample, with a dot for each time the current
+    bootstrap sample drew it. Bottom: histograms of the bootstrap means and medians
+    so far, titled with their standard deviation, the bootstrap standard error.
+
+    The draws match the notebook's loop (rng.integers(0, n, size=n), B times, from
+    default_rng(seed)), so after all B samples the standard errors match its printout.
+
+    Returns the widget."""
+    waits = np.asarray(waits, dtype=float)
+    n = len(waits)
+    rng = np.random.default_rng(seed)
+    draws = [rng.integers(0, n, size=n) for _ in range(B)]
+    stats = {'mean': np.array([waits[d].mean() for d in draws]),
+             'median': np.array([np.median(waits[d]) for d in draws])}
+    ours = {'mean': waits.mean(), 'median': np.median(waits)}
+    every = np.concatenate([stats['mean'], stats['median']])
+    stat_bins = np.arange(np.floor(every.min()), np.ceil(every.max()) + BOOT_STAT_BIN_WIDTH,
+                          BOOT_STAT_BIN_WIDTH)
+    right = max(60, WAITS_BIN_WIDTH * np.ceil(waits.max() / WAITS_BIN_WIDTH))
+    wait_bins = np.arange(0, right + WAITS_BIN_WIDTH, WAITS_BIN_WIDTH)
+    # Fixed vertical scales, tall enough for every bootstrap sample, so our waits look
+    # the same from one click to the next.
+    top_count = max(np.histogram(waits[d], wait_bins)[0].max() for d in draws)
+    most_draws = max(np.bincount(d).max() for d in draws)
+    state = {'b': 0}
+
+    one = widgets.Button(description='One more', button_style='info',
+                         layout=widgets.Layout(width='130px'))
+    hundred = widgets.Button(description='100 more', button_style='info',
+                             layout=widgets.Layout(width='130px'))
+    all_b = widgets.Button(description=f'All {B:,}', button_style='info',
+                           layout=widgets.Layout(width='130px'))
+    reset = widgets.Button(description='Reset', layout=widgets.Layout(width='100px'))
+    out = _figure_area()
+
+    def figure():
+        b = state['b']
+        fig = new_figure(figsize=(13, 10))
+        outer = fig.add_gridspec(2, 1, height_ratios=[4, 3], hspace=0.35)
+        top = outer[0].subgridspec(2, 1, height_ratios=[3, 1], hspace=0.08)
+        bottom = outer[1].subgridspec(1, 2, wspace=0.2)
+        ax_data = fig.add_subplot(top[0])
+        ax_strip = fig.add_subplot(top[1], sharex=ax_data)
+        ax_stats = [fig.add_subplot(bottom[0]), fig.add_subplot(bottom[1])]
+
+        # Our sample, with the current bootstrap sample on top.
+        ax_data.hist(waits, bins=wait_bins, color='0.8', edgecolor='white',
+                     label=f'our {n} waits')
+        for name in ('mean', 'median'):
+            ax_data.axvline(ours[name], color=BOOT_COLORS[name], lw=2.5, ls='--',
+                            label=f'our {name} = {ours[name]:.1f}')
+        counts = np.zeros(n, dtype=int)
+        if b:
+            draw = draws[b - 1]
+            counts = np.bincount(draw, minlength=n)
+            sample = waits[draw]
+            ax_data.hist(sample, bins=wait_bins, histtype='step', color=BOOT_SAMPLE_COLOR,
+                         lw=3, label=f'bootstrap sample {b:,}')
+            for name in ('mean', 'median'):
+                ax_data.axvline(stats[name][b - 1], color=BOOT_COLORS[name], lw=3,
+                                label=f'bootstrap {name} = {stats[name][b - 1]:.1f}')
+        ax_data.set_xlim(0, right)
+        ax_data.tick_params(labelbottom=False)
+        ax_data.set_ylim(0, top_count + 1)
+        ax_data.set_ylabel('number of waits')
+        ax_data.legend(loc='upper right', fontsize=12)
+        title = f'Our {n} waits: this sample stays fixed, and every bootstrap sample is drawn from it'
+        if b:
+            title = (f'Bootstrap sample b = {b:,}: {n} draws from our {n} waits, with '
+                     f'replacement\n({np.count_nonzero(counts)} different waits drawn, '
+                     f'{n - np.count_nonzero(counts)} left out)')
+        ax_data.set_title(title)
+
+        # One tick per wait we have; a dot for each time this bootstrap sample drew it.
+        ax_strip.plot(waits, np.zeros(n), '|', color='black', ms=18, mew=1.5)
+        for x, c in zip(waits, counts):
+            ax_strip.plot(np.full(c, x), 1 + np.arange(c), 'o', ms=7,
+                          color=BOOT_SAMPLE_COLOR, mec='black', mew=0.5)
+        ax_strip.set_ylim(-0.8, most_draws + 1)
+        ax_strip.set_yticks([])
+        ax_strip.set_xlabel('waiting time (minutes): ticks are our waits, dots are draws')
+
+        # The bootstrap means and medians so far.
+        for ax, name in zip(ax_stats, ('mean', 'median')):
+            values = stats[name][:b]
+            ax.hist(values, bins=stat_bins, color=BOOT_COLORS[name], edgecolor='white',
+                    linewidth=0.5)
+            ax.axvline(ours[name], color='black', lw=2, ls='--', zorder=3,
+                       label=f'our {name} = {ours[name]:.1f}')
+            se = (f'standard error = {np.std(values, ddof=1):.2f}' if b > 1
+                  else 'standard error: needs 2 or more')
+            ax.set_title(f'{b:,} bootstrap {name}{"" if b == 1 else "s"}\n{se}')
+            ax.legend(loc='upper left', fontsize=12)
+            ax.set_xlim(stat_bins[0], stat_bins[-1])
+            ax.set_ylim(0, max(1, ax.get_ylim()[1]))
+            ax.set_xlabel(f'{name} of a bootstrap sample (minutes)')
+        ax_stats[0].set_ylabel('number of bootstrap samples')
+        return fig
+
+    def render():
+        for button in (one, hundred, all_b):
+            button.disabled = state['b'] == B
+        _show(out, figure, size_percent)
+
+    def add(k):
+        state['b'] = min(B, state['b'] + k)
+        render()
+
+    one.on_click(lambda _: add(1))
+    hundred.on_click(lambda _: add(100))
+    all_b.on_click(lambda _: add(B))
+    reset.on_click(lambda _: (state.update(b=0), render()))
+    render()
+    demo = widgets.VBox([widgets.HBox([one, hundred, all_b, reset]), out])
+    display(demo)
+    return demo
+
+
+def plot_bootstrap_stats(boot_means, boot_medians, se_mean, se_median):
+    """Demo B: histograms of the bootstrap means and medians, on a shared x axis."""
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(1, 2, figsize=(14, 4.8), sharex=True, sharey=True)
+        for ax, values, name, se in ((axes[0], boot_means, 'mean', se_mean),
+                                     (axes[1], boot_medians, 'median', se_median)):
+            ax.hist(values, bins=50, color=BOOT_COLORS[name], edgecolor='white', linewidth=0.5)
+            ax.set_title(f'{len(values):,} bootstrap {name}s\nstandard error = {se:.2f}')
+            ax.set_xlabel(f'{name} of a bootstrap sample')
+        axes[0].set_ylabel('number of bootstrap samples')
+        fig.tight_layout()
+    return fig
+
+
+def plot_bootstrap_difference(diffs, observed, interval):
+    """Demo C: histogram of the bootstrap accuracy differences (percentage points), with
+    the observed difference, the 95% interval, and a dashed line at zero."""
+    diffs, observed = 100 * np.asarray(diffs), 100 * observed
+    low, high = 100 * np.asarray(interval)
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(11, 5))
+        ax.hist(diffs, bins=np.arange(diffs.min() - 0.5, diffs.max() + 1.5, 1.0),
+                color='0.75', edgecolor='white', linewidth=0.5)
+        ax.axvspan(low, high, color=BOOT_COLORS['band'], alpha=0.25,
+                   label=f'95% interval: {low:+.0f} to {high:+.0f}')
+        ax.axvline(observed, color=BOOT_COLORS['observed'], lw=3,
+                   label=f'observed difference: {observed:+.0f}')
+        ax.axvline(0, color='black', ls='--', lw=2.5, label='no difference')
+        ax.set_xlabel('KNN accuracy minus logistic regression accuracy (percentage points)')
+        ax.set_ylabel('number of bootstrap samples')
+        ax.set_title(f'{len(diffs):,} bootstrap differences')
+        ax.legend(loc='upper left')
+        fig.tight_layout()
+    return fig
+
+
+# --- Bootstrap notebook (ch_5_02): bootstrapping by hand -----------------------
+
+from time import sleep
+
+from matplotlib.patches import ConnectionPatch
+
+HAND_SCORES = (-4, -2, -1, 1, 2, 3, 4, 5)   # n = 8 people
+HAND_B = 20                                 # B = 20 bootstrap samples
+HAND_DOT_SIZE = 24
+HAND_STEP_SECONDS = 0.05
+HAND_TITLE_BOX = {'facecolor': 'white', 'edgecolor': 'none', 'pad': 2}   # hides the arrow behind titles
+HAND_MEAN_GAP = 0.3       # means closer than this (in score units) stack instead of overlapping
+
+
+def _number_line(ax, half_width, label=True):
+    """A horizontal number line at y = 0 with integer ticks, and no other axes."""
+    ax.axhline(0, color='black', lw=1.5, zorder=1)
+    ax.set_xlim(-half_width, half_width)
+    ax.set_xticks(range(-int(half_width) + 1, int(half_width)))
+    ax.tick_params(axis='x', labelbottom=True, length=6)
+    ax.set_yticks([])
+    for side in ('left', 'right', 'top'):
+        ax.spines[side].set_visible(False)
+    ax.spines['bottom'].set_position(('data', 0))
+    if label:
+        ax.text(0.0, -0.30, '← harmed', transform=ax.transAxes, ha='left', va='top', fontsize=13)
+        ax.text(1.0, -0.30, 'improved →', transform=ax.transAxes, ha='right', va='top', fontsize=13)
+
+
+def _stack_heights(values):
+    """For each value, how many earlier values equal it (its height in a dot stack)."""
+    seen, heights = {}, []
+    for v in values:
+        heights.append(seen.get(v, 0))
+        seen[v] = seen.get(v, 0) + 1
+    return heights
+
+
+def _swarm_heights(values, gap):
+    """Stack levels for a dot plot that keeps each dot at its exact x: each value takes
+    the lowest level with no earlier dot within gap of it."""
+    levels = []
+    for i, v in enumerate(values):
+        taken = {levels[j] for j in range(i) if abs(values[j] - v) < gap}
+        level = 0
+        while level in taken:
+            level += 1
+        levels.append(level)
+    return levels
+
+
+def bootstrap_by_hand_demo(scores=HAND_SCORES, B=HAND_B, seed=463, size_percent=100):
+    """Bootstrapping, one draw at a time: B bootstrap samples of n = len(scores) points.
+
+    Top line: the data, one numbered dot per person. Middle line: the current bootstrap
+    sample. Each click of Draw one picks a person at random (with replacement), draws an
+    arrow from their dot, and copies it to the middle line. After n draws the sample is
+    complete: its mean and median go in the table, and its mean is added to the bottom
+    line, which collects one mean per bootstrap sample. Full sample finishes the current
+    sample (or does a whole new one), animated. All B samples finishes every remaining
+    sample without animating each draw. After B samples, only Reset works. Reset starts
+    over with the same random draws.
+
+    Returns the widget."""
+    scores = np.asarray(scores, dtype=float)
+    n = len(scores)
+    colors = [cm.tab10(i % 10) for i in range(n)]
+    half_width = np.ceil(np.abs(scores).max()) + 1.5
+    data_mean, data_median = scores.mean(), np.median(scores)
+    state = {}
+
+    draw_one = widgets.Button(description='Draw one', button_style='info',
+                              layout=widgets.Layout(width='140px'))
+    full_sample = widgets.Button(description='Full sample', button_style='info',
+                                layout=widgets.Layout(width='140px'))
+    all_samples = widgets.Button(description=f'All {B} samples', button_style='info',
+                                 layout=widgets.Layout(width='160px'))
+    reset = widgets.Button(description='Reset', layout=widgets.Layout(width='100px'))
+    table = widgets.HTML(layout=widgets.Layout(min_width='230px', max_height='640px',
+                                               overflow='auto'))
+    out = _figure_area()
+
+    def start_over():
+        state.update(rng=np.random.default_rng(seed), draws=[], done=False,
+                     means=[], medians=[])
+
+    def new_sample_if_needed():
+        if state['done']:
+            state.update(draws=[], done=False)
+
+    def draw_next():
+        state['draws'].append(int(state['rng'].integers(0, n)))
+        if len(state['draws']) == n:
+            sample = scores[state['draws']]
+            state['means'].append(sample.mean())
+            state['medians'].append(np.median(sample))
+            state['done'] = True
+
+    def figure():
+        fig, (ax_data, ax_sample, ax_means) = subplots(
+            3, 1, figsize=(11, 9.5), gridspec_kw={'height_ratios': [1.3, 2.2, 2.2]})
+        for ax in (ax_data, ax_sample, ax_means):
+            _number_line(ax, half_width, label=ax is not ax_means)
+            ax.patch.set_visible(False)   # so the arrow, drawn behind the axes, shows through
+
+        # The data: one numbered dot per person.
+        data_heights = _stack_heights(scores)
+        data_y = [0.55 + 0.9 * h for h in data_heights]
+        for i, (x, y) in enumerate(zip(scores, data_y)):
+            ax_data.plot(x, y, 'o', ms=HAND_DOT_SIZE, color=colors[i], mec='black', zorder=3)
+            ax_data.text(x, y, str(i + 1), ha='center', va='center', color='white',
+                         fontsize=12, fontweight='bold', zorder=4)
+        ax_data.set_ylim(0, max(data_y) + 0.7)
+        ax_data.axvline(data_mean, color='black', ls='--', lw=1.5, zorder=0)
+        ax_data.set_title(f'The data: n = {n} people (mean = {data_mean:.1f}, '
+                          f'median = {data_median:.1f})', loc='left', bbox=HAND_TITLE_BOX)
+
+        # The current bootstrap sample, stacked where a person is drawn more than once.
+        draws = state['draws']
+        sample = scores[draws]
+        sample_y = [0.55 + 0.9 * h for h in _stack_heights(sample)]
+        for i, x, y in zip(draws, sample, sample_y):
+            ax_sample.plot(x, y, 'o', ms=HAND_DOT_SIZE, color=colors[i], mec='black', zorder=3)
+            ax_sample.text(x, y, str(i + 1), ha='center', va='center', color='white',
+                           fontsize=12, fontweight='bold', zorder=4)
+        ax_sample.set_ylim(0, max([4.0] + [y + 0.7 for y in sample_y]))
+        b = len(state['means']) + (0 if state['done'] else 1)
+        title = f'Bootstrap sample b = {b} of B = {B}: {len(draws)} of n = {n} draws'
+        if state['done']:
+            ax_sample.axvline(sample.mean(), color=QUERY_COLOR, lw=3, zorder=2)
+            title += f' (mean = {sample.mean():.1f})'
+        ax_sample.set_title(title, loc='left', bbox=HAND_TITLE_BOX)
+        if draws:
+            i, x_to, y_to = draws[-1], sample[-1], sample_y[-1]
+            arrow = ConnectionPatch(xyA=(scores[i], data_y[i] - 0.35), coordsA=ax_data.transData,
+                                    xyB=(x_to, y_to + 0.35), coordsB=ax_sample.transData,
+                                    arrowstyle='-|>', mutation_scale=22, lw=2.5,
+                                    color=colors[i], zorder=-1)   # behind titles and dots
+            fig.add_artist(arrow)
+
+        # One mean per completed bootstrap sample, as a dot plot.
+        means = state['means']
+        heights = _swarm_heights(means, HAND_MEAN_GAP)
+        tallest = max(heights, default=0) + 1
+        step = min(1.0, 6 / tallest)
+        for x, h in zip(means, heights):
+            ax_means.plot(x, 0.4 + step * h, 'o', ms=max(5, 14 * step), color=QUERY_COLOR,
+                          mec='black', mew=0.6, zorder=3)
+        ax_means.set_ylim(0, 7)
+        ax_means.axvline(data_mean, color='black', ls='--', lw=1.5, zorder=0)
+        ax_means.set_title(f'Means of the bootstrap samples: {len(means)} of B = {B} '
+                           f'(dashed line: mean of the data)', loc='left', bbox=HAND_TITLE_BOX)
+        fig.tight_layout(h_pad=2.5)
+        return fig
+
+    def render():
+        rows = ''.join(f'<tr><td style="padding: 0 14px 0 0;">{r + 1}</td>'
+                       f'<td style="padding: 0 14px 0 0; text-align: right;">{m:.1f}</td>'
+                       f'<td style="text-align: right;">{md:.1f}</td></tr>'
+                       for r, (m, md) in enumerate(zip(state['means'], state['medians'])))
+        table.value = _html(
+            '<table><tr><th style="padding: 0 14px 0 0;">Sample <i>b</i></th>'
+            '<th style="padding: 0 14px 0 0;">Mean</th><th>Median</th></tr>'
+            f'<tr style="border-bottom: 1px solid #999;"><td style="padding: 0 14px 0 0;"><i>data</i></td>'
+            f'<td style="padding: 0 14px 0 0; text-align: right;"><i>{data_mean:.1f}</i></td>'
+            f'<td style="text-align: right;"><i>{data_median:.1f}</i></td></tr>'
+            f'{rows}</table>')
+        _show(out, figure, size_percent)
+
+    def finished():
+        return state['done'] and len(state['means']) == B
+
+    def set_busy(busy):
+        for button in (draw_one, full_sample, all_samples):
+            button.disabled = busy or finished()
+        reset.disabled = busy
+
+    def on_draw_one(_):
+        if finished():
+            return
+        new_sample_if_needed()
+        draw_next()
+        render()
+        set_busy(False)
+
+    def on_full_sample(_):
+        if finished():
+            return
+        set_busy(True)
+        try:
+            new_sample_if_needed()
+            while not state['done']:
+                draw_next()
+                render()
+                sleep(HAND_STEP_SECONDS)
+        finally:
+            set_busy(False)
+
+    def on_all_samples(_):
+        set_busy(True)
+        try:
+            while not finished():
+                new_sample_if_needed()
+                while not state['done']:
+                    draw_next()
+                render()
+        finally:
+            set_busy(False)
+
+    def on_reset(_):
+        start_over()
+        render()
+        set_busy(False)
+
+    draw_one.on_click(on_draw_one)
+    full_sample.on_click(on_full_sample)
+    all_samples.on_click(on_all_samples)
+    reset.on_click(on_reset)
+    start_over()
+    render()
+    demo = widgets.VBox([widgets.HBox([draw_one, full_sample, all_samples, reset]),
+                         widgets.HBox([out, table])])
+    display(demo)
+    return demo

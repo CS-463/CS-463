@@ -821,6 +821,45 @@ It picks non-default, because 0.045 is bigger than 0.03, which matches the poste
 
 Each question below tests one idea from the reading, mostly by asking how the equations connect to the diagrams and derivations. Try each one before opening anything. If you get stuck, the hint links back to the sections the question depends on.
 
+
+
+### Question 0 <a id="practice-q0"></a>
+
+For a customer described by many features, Bayes' theorem rewrites the posterior as:
+
+$$
+P(D \mid \text{evidence}) = \frac{P(\text{evidence} \mid D)\;P(D)}{P(\text{evidence})}
+$$
+
+Which statement best explains why this rewrite gives us a way to estimate the posterior from data on past customers?
+
+- **a.** It shows that P(D | evidence) and P(evidence | D) are the same number, so we can use whichever one is easier to count.
+- **b.** It puts the evidence on the left of the "given" bar, within a single class. There, the naive assumption lets us estimate P(evidence | D) as a product of one-feature shares, each counted among *all* the defaulters.
+- **c.** It removes the need to know the prior, P(D).
+- **d.** P(evidence | D) can always be counted directly from past data, however many features the evidence has.
+
+<details>
+<summary>Hint</summary>
+
+- Dependencies: [Section 2: Why flipping the condition helps](#section-2), [Section 6: The hard part](#section-6), [Section 7: The naive assumption](#section-7)
+- Look at the table in Section 2. Which pieces does it call hard, and when?
+- The naive assumption is a claim about features *within one class*. Which side of the bar does the class have to be on for it to apply?
+
+</details>
+
+<details>
+<summary>Solution</summary>
+
+**b.** Counting P(D | evidence) directly means looking only at the past customers who match *every* feature of the evidence, and with many features, that group shrinks to almost nobody (Section 6). Bayes' theorem moves the evidence to the left of the bar, so the question becomes "among defaulters, what share look like this customer?" That's still hard to count directly with many features, but the evidence is now described within a single class, which is exactly where the naive assumption applies. It replaces the share matching every feature with a product of one-feature shares, each counted among all 20 defaulters (Section 7). Once Section 4 writes the denominator as one term per class, the same move works there too.
+
+The other options:
+
+- **a** is false. P(D | evidence) and P(evidence | D) share a numerator but divide by different groups, so they're usually different numbers (Question 1 below explores this).
+- **c** is false. The prior is still in the formula. It's one of the easy pieces: the share of all customers who defaulted.
+- **d** is false. The table in Section 2 says P(evidence | D) is easy for one simple fact but hard for many facts at once. That's why we need the naive assumption.
+
+</details>
+
 ### Question 1
 
 In [Figure 1](#section-1), suppose circle B shrinks but the overlap with A stays exactly the same size. What happens to P(A | B)? What happens to P(B | A)?
@@ -977,6 +1016,46 @@ Before the rewrite in Section 4, the denominator was the share of *all* customer
 The naive assumption says features are independent *within a class*. It says nothing about all customers mixed together, and features are usually related overall because they depend on the class. For example, customers who missed a payment are more likely to be defaulters, and defaulters are more likely to have a high balance. So multiplying overall shares isn't justified by the assumption at all. Section 8's aside tries it, and the two posteriors add to 113%.
 
 The rewrite in Section 4 is what makes naive Bayes possible. It expresses the denominator as one P(evidence | class) × P(class) term per class, and within a class, the assumption applies. The same approximation then works on every term, top and bottom, and the posteriors still add to 1.
+
+</details>
+
+
+
+
+### Question 7 <a id="practice-q7"></a>
+
+
+[Equation 4.15](#eq-4-15) is Bayes' theorem in ISL's notation:
+
+$$
+\Pr(Y = k \mid X = x) = \frac{\pi_k\, f_k(x)}{\sum_{l=1}^{K} \pi_l\, f_l(x)}
+$$
+
+In our bank, $K = 2$, class 1 is the defaulters, class 2 is the non-defaulters, and $x$ is the evidence "high balance and missed a payment." Say in words what each of these means:
+
+- **a.** $\pi_1$
+- **b.** $f_1(x)$
+- **c.** $\Pr(Y = 1 \mid X = x)$
+- **d.** the whole denominator, $\sum_{l=1}^{2} \pi_l\, f_l(x)$
+
+<details>
+<summary>Hint</summary>
+
+- Dependencies: [Section 4: The denominator becomes a sum](#section-4), [Section 5: Two features](#section-5), [Section 9: Translating into ISL's notation](#section-9)
+- The table in Section 9 translates each symbol into our bank's example.
+- For **d**, write the sum out for $l = 1$ and $l = 2$. What does each term stand for in the picture from Section 4?
+
+</details>
+
+<details>
+<summary>Solution</summary>
+
+- **a.** $\pi_1$ is the **prior** for class 1: the share of all customers who defaulted.
+- **b.**  $f_1(x)$ is the probability (density) of observing $x$ (high balance and missed payment) given the customer is in class 1 (a defaulter). In other words, $f_1(x)$ is the share of defaulters whose features match the **whole** evidence: a high balance *and* a missed payment, $P(M \cap H \mid D)$. 
+- **c.** $\Pr(Y = 1 \mid X = x)$ is the **posterior**: the probability that a customer with a high balance and a missed payment defaults.
+- **d.** The denominator is the **evidence**: the share of *all* customers who have a high balance and missed a payment. Written out, it's $\pi_1 f_1(x) + \pi_2 f_2(x)$, one term per class: the defaulters' piece of the evidence region plus the non-defaulters' piece (Section 4). The counter $l$ runs over every class, including class 1.
+
+Equation 4.15 uses $f_k(x)$, the share matching the whole evidence at once, and makes no naive assumption. That's why it gives the exact posterior.
 
 </details>
 

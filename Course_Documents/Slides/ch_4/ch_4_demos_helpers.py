@@ -1544,6 +1544,32 @@ def plot_roc_comparison(df, fit, seed=463):
     return fig
 
 
+ROC_POINT_THRESHOLDS = {'A': 0.3, 'B': 0.05, 'C': 0.005}
+
+
+def plot_roc_points(fit, thresholds=ROC_POINT_THRESHOLDS):
+    """The balance model's ROC curve with a few labeled thresholds, and scenario-neutral axis labels.
+
+    Used by the practice questions that ask which threshold suits a stated goal."""
+    fpr, tpr, _ = roc_curve(fit.y, fit.p)
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(8, 7.5))
+        _draw_roc_axes(ax)
+        ax.set_xlabel('false positive rate\n(share of actual negatives flagged)')
+        ax.set_ylabel('recall (true positive rate)\n(share of actual positives caught)')
+        ax.plot(fpr, tpr, lw=3, color=OUTCOME_COLORS['TP'])
+        for label, t in thresholds.items():
+            flagged = fit.p >= t
+            x = (flagged & (fit.y == 0)).sum() / (fit.y == 0).sum()
+            y = (flagged & (fit.y == 1)).sum() / (fit.y == 1).sum()
+            ax.plot(x, y, 'o', ms=13, color='black', zorder=5)
+            ax.annotate(f'{label}  ({x:.2f}, {y:.2f})', (x, y), xytext=(14, -22),
+                        textcoords='offset points', fontsize=15, fontweight='bold')
+        ax.set_title('ROC curve')
+        fig.tight_layout()
+    return fig
+
+
 # --- Sections 9 and 10: the likelihood surface, and separated classes ---------
 
 # Twelve made-up customers. In the overlapping version, one low-balance customer

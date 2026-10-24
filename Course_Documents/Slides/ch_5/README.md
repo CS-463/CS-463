@@ -2,9 +2,10 @@
 
 ## Files you need
 
-Get both files from this folder and keep them **in the same folder** on your computer:
+Get these files from this folder and keep them **in the same folder** on your computer:
 
 - `ch_5_01_knn_bayes_boundary.ipynb`
+- `ch_5_demos_2_bootstrap.ipynb`
 - `ch_5_demos_helpers.py` (the notebook imports its demos from this file)
 
 If you cloned the course repo, run `git pull` to get them.

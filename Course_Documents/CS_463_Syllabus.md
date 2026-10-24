@@ -120,7 +120,7 @@ Submit your response by **Monday at 11:59 PM**, two nights before we discuss the
 
 ## Kaggle Programming Project — 25%
 
-A single project running from Week 5 through the end of the quarter, hosted as a private Kaggle competition. **This year we're working with the Cell Phone Addiction dataset.**
+A single project running from Week 5 through the end of the quarter, hosted as a private Kaggle competition. **This year we're working with the Spaceship Titanic dataset.**
 
 You'll submit predictions to Kaggle throughout the quarter and see how your models score against held-out data. **Your leaderboard rank is not part of your grade.** The leaderboard is feedback, not assessment.
 
