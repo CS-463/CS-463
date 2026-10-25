@@ -114,17 +114,15 @@ You may use LLM's to assist with your research, stress-test your ideas, explore 
 
 ## Kaggle Programming Project
 
-*Drop-in replacement for the "Coming Soon" section of `Grading_Rubrics.md`.*
-
 The project is worth 25% of your course grade, split into four parts:
 
-| Component | Points | Share of project | Due |
-|---|---|---|---|
-| Checkpoint 1 — Baseline | 15 | 15% | Fri, Nov 6, 11:59 PM |
-| Checkpoint 2 — Model Comparison | 15 | 15% | Fri, Nov 20, 11:59 PM |
-| Submission | 50 | 50% | Wed, Dec 2, 11:59 PM |
-| Oral Defense | 20 | 20% | Fri, Dec 4 (scheduled slot) |
-| **Total** | **100** | **100%** | |
+| Component | Points | Share of project |
+|---|---|---|
+| Checkpoint 1 — Baseline | 15 | 15% |
+| Checkpoint 2 — Model Comparison | 15 | 15% |
+| Submission | 50 | 50% |
+| Oral Defense | 20 | 20% |
+| **Total** | **100** | **100%** |
 
 **Your leaderboard rank is never part of your grade.** What's graded is the quality of your process and how well you understand it. A thoughtful project at 78% accuracy beats a copied one at 81%.
 
@@ -184,7 +182,7 @@ The project is worth 25% of your course grade, split into four parts:
 4. **Leakage check.** All preprocessing lives inside a `Pipeline` (or is otherwise fit only on training folds). Point to where in your code this happens.
 5. **Update your experiment log** and submit your current best model to Kaggle.
 6. **Draft README.md** with: a one-paragraph project summary, how to run your code, and your plan for the remaining two weeks.
-7. **Mini-defense (practice, in the Nov 20 Friday lab).** A 3–4 minute breakout-room conversation with me: walk me through your current best model and answer one follow-up question. This is graded on participation only. Its purpose is to show you what the real defense feels like.
+7. **Mini-defense (practice, we'll discuss scheduling details).** A short  breakout-room conversation with me: walk me through your current best model and answer one follow-up question. This is graded on participation only. Its purpose is to show you what the real defense feels like.
 
 **Rubric**
 
