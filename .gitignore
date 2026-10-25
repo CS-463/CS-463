@@ -87,4 +87,6 @@ data/processed/
 # Any directory that starts with "submissions"
 submissions/
 
-
+# Kaggle competition data (raw downloads, and solution.csv with the test answers)
+Kaggle_Projects/*/raw/
+Kaggle_Projects/*/competition_data/
