@@ -27,12 +27,12 @@
 | 3 | Oct 5, 7 | Classification and its metrics | §4.1–4.3 | **Perspectives 2 due Mon Oct 5** | **No class Fri Oct 9** |
 | 4 | Oct 12, 14, 16 | Bayes; gradient descent | §4.4–4.5; §10.7 (opening) | Lab 3 — Gradient descent<br>**Perspectives 3 due Mon Oct 12** |  |
 | 5 | Oct 19, 21, 23 | Cross-Validation; Bootstrap | Ch. 5 | Lab 4 — Cross-validation and the bootstrap<br>**Perspectives 4 due Mon Oct 19** |  **Kaggle Programming Project released** |
-| 6 | Oct 26, 28 | Regularization; linear model selection; PCA Intro | §6.1–6.2, §6.3.1, §6.4 | — | **Midterm — Wed Oct 28**; no class Fri Oct 30 |
-| 7 | Nov 2, 4, 6 | Trees and ensembles | Ch. 8 | Lab 5 — Tree-based methods<br>**Perspectives 5 due Mon Nov 2** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
-| 8 | Nov 9, 13 | Unsupervised learning: PCA and clustering | §12.1–12.2, §12.4 | Lab 6 — PCA and clustering | **No class Wed Nov 11** (Veterans Day) |
-| 9 | Nov 16, 18, 20 | Neural networks | §10.1–10.2, §10.6–10.7 | Lab 7 — Train and diagnose a network<br>**Perspectives 6 due Mon Nov 16** |  **Kaggle Programming Project checkpoint 2** |
-| 10 | Nov 23 | Embeddings, retrieval, and recommenders | §10.4, §12.3 | — | Monday only; **no class Nov 25, 27** (Thanksgiving) |
-| 11 | Nov 30, Dec 2, 4 | Double descent; LLM tour | §10.8 | — | **Kaggle Programming Project due Wed Dec 2**; **project defenses Fri Dec 4** |
+| 6 | Oct 26, 28 | Midterm review | — | — | **Midterm — Wed Oct 28**; no class Fri Oct 30 |
+| 7 | Nov 2, 4, 6 | Trees; regularization (pruning, ridge, lasso); ensembles | §8.1–8.2.3; §6.2 | Lab 5 — Trees, regularization, and ensembles (includes PyTorch setup)<br>**Perspectives 5 due Mon Nov 2** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
+| 8 | Nov 9, 13 | From perceptrons to neural networks | §10.1–10.2 | Lab 6 — A neuron from scratch | **No class Wed Nov 11** (Veterans Day) |
+| 9 | Nov 16, 18, 20 | Training neural networks: backpropagation, gradient descent at scale, PyTorch, regularizing networks | §10.6–10.7 | Lab 7 — Train and diagnose a network<br>**Perspectives 6 due Mon Nov 16** |  **Kaggle Programming Project checkpoint 2** |
+| 10 | Nov 23 | Embeddings and next-token prediction | §10.4–10.5.1 (instructor to confirm) | — | Monday only; **no class Nov 25, 27** (Thanksgiving) |
+| 11 | Nov 30, Dec 2, 4 | TBD (Mon); tour of large language models (Wed) | TBD | — | **Kaggle Programming Project due Wed Dec 2**; **project defenses Fri Dec 4** |
 | — | Wed Dec 9 | **Final exam** (cumulative) | | | Finals week |
 
 ## Calendar Notes
@@ -165,7 +165,7 @@ Both exams are taken in person on campus, with devices put away. You may not use
 
 Week 11 contains two kinds of material, and the final treats them differently.
 
-**Monday, Nov 30 — double descent (§10.8) is fair game.** This is regular course material and can appear on the final as an ordinary graded question.
+**Monday, Nov 30 — this session's material is fair game.** Whatever we cover that day is regular course material and can appear on the final as an ordinary graded question.
 
 **Wednesday, Dec 2 — the large language model session is exposure only.** That material arrives too late in the quarter to hold you accountable for it on an exam, so **any final exam question drawn from the Wednesday LLM session is extra credit only.** It can help your score and it cannot hurt it.
 
