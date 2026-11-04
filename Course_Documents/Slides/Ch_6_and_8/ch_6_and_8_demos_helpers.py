@@ -1,7 +1,8 @@
 """Simulation, plotting, and widget helpers for the Chapters 6 and 8 notebooks.
 
-ch_6_and_8_01_trees_and_regularization.ipynb, ch_6_and_8_02_ridge_lasso_ensembles.ipynb,
-and ch_6_and_8_03_preparing_real_data.ipynb use this module. The notebooks stay
+ch_6_and_8_01_trees_and_regularization.ipynb, ch_6_and_8_02_ensembles.ipynb, and
+ch_6_and_8_03_preparing_real_data.ipynb use this module. The ridge/lasso helpers are
+kept for the held ridge/lasso notebook in instructor/monday_ridge_lasso_holding/. The notebooks stay
 focused on ideas; the simulation, matplotlib, and ipywidgets details live here.
 
 The simulated data, its Bayes boundary, the colors, and the figure sizing are
@@ -1107,7 +1108,7 @@ def pruning_demo(sim, alphas, size_percent=100):
                           readout, out]))
 
 
-# --- NB2 Demo F: shrinking a wiggly fit ------------------------------------------
+# --- Held ridge/lasso notebook, Demo F: shrinking a wiggly fit ------------------------
 
 WIGGLE_DEGREE = 12
 WIGGLE_LAMBDAS = np.logspace(-6, 3, 19)
@@ -1188,7 +1189,7 @@ def ridge_wiggle_demo(size_percent=100):
     display(widgets.VBox([_flexibility_row(lam_slider), readout, out]))
 
 
-# --- NB2 Demo G: ridge vs. lasso coefficient paths --------------------------------
+# --- Held ridge/lasso notebook, Demo G: ridge vs. lasso coefficient paths -------------
 
 PATH_LAMBDAS = {'Ridge': np.logspace(-2, 5, 29), 'Lasso': np.logspace(-2, 3, 21)}
 PATH_HIGHLIGHTED = 4
@@ -1260,7 +1261,7 @@ def coefficient_path_demo(X, y, names, size_percent=100):
     display(widgets.VBox([method, _flexibility_row(lam_slider), readout, out]))
 
 
-# --- NB2 Demo H (optional): why lasso hits zero -----------------------------------
+# --- Held ridge/lasso notebook, Demo H (optional): why lasso hits zero ----------------
 
 CORNER_CENTER = np.array([2.0, 0.4])          # the least squares coefficients
 CORNER_SHAPE = np.array([[1.0, 0.3], [0.3, 1.4]])
@@ -1318,7 +1319,7 @@ def plot_lasso_corner():
     return fig
 
 
-# --- NB2 Demo I: choosing lambda by cross-validation -------------------------------
+# --- Held ridge/lasso notebook, Demo I: choosing lambda by cross-validation -----------
 
 def plot_cv_lambda(curves, ols_mse, mean_mse):
     """Demo I: 10-fold CV MSE against lambda, one panel per method.
@@ -1347,10 +1348,10 @@ def plot_cv_lambda(curves, ols_mse, mean_mse):
     return fig
 
 
-# --- NB2 Demo J: ensembles ----------------------------------------------------------
+# --- NB2 Demos F and I: bagging, and ensembles compared -----------------------------
 
 def plot_ensemble_boundaries(sim, models):
-    """Demo J: a 2 x 2 grid, one panel per fitted classifier in `models` (name -> model),
+    """Demo I: a 2 x 2 grid, one panel per fitted classifier in `models` (name -> model),
     with the Bayes boundary, titled with training and test error."""
     with rc_context(BIG_FONTS):
         fig, axes = subplots(2, 2, figsize=(15, 13.5), sharex=True, sharey=True)
@@ -1369,7 +1370,7 @@ BAG_SIZES = (1, 5, 25, 100, 300)
 
 
 def bagging_demo(sim, size_percent=100):
-    """Demo J control: the boundary of a bag of B trees, for B on the slider.
+    """Demo F: the boundary of a bag of B trees, for B on the slider.
 
     One BaggingClassifier with 300 trees is fit once; a bag of B trees is its first
     B trees, which is itself a bag of B bootstrap trees. Predictions average the
@@ -1411,6 +1412,112 @@ def bagging_demo(sim, size_percent=100):
     b_slider.observe(update, names='value')
     update()
     display(widgets.VBox([b_slider, readout, out]))
+
+
+# --- NB2 Demo G: how alike are the trees? ---------------------------------------------
+
+FOREST_P = 10
+FOREST_WEIGHTS = np.array([5.0] + [1.0] * (FOREST_P - 1))
+FOREST_FEATURE_CORR = 0.3
+
+
+def forest_data(n=300, n_test=1000, seed=0):
+    """Demo G: a regression data set with p = 10 features.
+
+    Feature 1 is strong (weight 5, plus a curve); features 2 to 10 are moderately
+    useful (weight 1 each). Every pair of features has correlation 0.3, and the noise
+    has standard deviation 1. Returns X, y (training) and X_test, y_test (new points
+    from the same recipe), all as NumPy arrays."""
+    rng = np.random.default_rng(seed)
+    cov = np.full((FOREST_P, FOREST_P), FOREST_FEATURE_CORR)
+    np.fill_diagonal(cov, 1)
+
+    def draw(size):
+        X = rng.multivariate_normal(np.zeros(FOREST_P), cov, size=size)
+        y = X @ FOREST_WEIGHTS + 2 * np.sin(2 * X[:, 0]) + rng.normal(0, 1, size)
+        return X, y
+
+    X, y = draw(n)
+    X_test, y_test = draw(n_test)
+    return SimpleNamespace(X=X, y=y, X_test=X_test, y_test=y_test)
+
+
+def plot_tree_correlation(results, p=FOREST_P):
+    """Demo G: three stacked panels against m (results has columns m, 'tree
+    correlation', 'single-tree MSE', 'forest MSE'). m = p is marked as bagging, and a
+    star marks the forest's lowest test MSE."""
+    panels = [('tree correlation', 'average correlation\nbetween trees\' errors', OKABE_ITO[3]),
+              ('single-tree MSE', 'test MSE of\none tree', CURVE_COLORS['training error']),
+              ('forest MSE', 'test MSE of\nthe forest', CURVE_COLORS['test error'])]
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(3, 1, figsize=(11, 11), sharex=True)
+        for ax, (column, label, color) in zip(axes, panels):
+            ax.plot(results['m'], results[column], 'o-', color=color, lw=2.5, ms=7)
+            ax.axvline(p, color='gray', ls=':', lw=2)
+            ax.set_ylabel(label)
+            ax.grid(alpha=0.3)
+        best = results.loc[results['forest MSE'].idxmin()]
+        axes[2].plot(best['m'], best['forest MSE'], '*', ms=22, color=CURVE_COLORS['test error'],
+                     mec='black', label=f'lowest: m = {best["m"]:.0f}')
+        axes[2].legend(loc='upper center')
+        axes[0].text(p - 0.15, 0.06, 'm = p: bagging', transform=axes[0].get_xaxis_transform(),
+                     ha='right', color='gray')
+        axes[2].set_xlabel('m, the number of features each split may choose from')
+        axes[2].set_xticks(results['m'])
+        axes[0].set_title('Smaller m: less alike trees, worse single trees')
+        fig.tight_layout()
+    return fig
+
+
+def plot_correlation_heatmaps(matrices):
+    """Demo G: side-by-side tree-by-tree correlation matrices ({title: matrix}),
+    on one shared color scale. The diagonal (each tree with itself, always 1) is
+    left blank so the color scale can spread over the other pairs."""
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(1, len(matrices), figsize=(15, 6.5), layout='constrained')
+        for ax, (title, matrix) in zip(axes, matrices.items()):
+            off_diagonal = matrix[np.triu_indices(len(matrix), 1)].mean()
+            shown = matrix.copy()
+            np.fill_diagonal(shown, np.nan)
+            image = ax.imshow(shown, vmin=0, vmax=0.6, cmap='viridis')
+            ax.set_title(f'{title}\naverage correlation {off_diagonal:.2f}')
+            ax.set_xlabel('tree')
+            ax.set_ylabel('tree')
+        fig.colorbar(image, ax=axes, shrink=0.9, label='correlation of two trees\' errors')
+    return fig
+
+
+# --- NB2 Demo H: boosting, many small corrections -----------------------------------
+
+def _boosting_truth(x):
+    return np.sin(2 * np.pi * x) + 2 * x
+
+
+def boosting_data(n=100, seed=8):
+    """Demo H: n points on [0, 1] from a smooth curve plus noise. x is a column
+    (shape (n, 1)), as scikit-learn expects."""
+    rng = np.random.default_rng(seed)
+    x = np.sort(rng.uniform(0, 1, n))
+    return SimpleNamespace(x=x.reshape(-1, 1), y=_boosting_truth(x) + rng.normal(0, 0.3, n))
+
+
+def plot_boosting_stages(data, stages):
+    """Demo H: one panel per number of trees ({B: predictions on a grid of x}),
+    each showing the data, the true curve, and the boosted fit."""
+    grid = np.linspace(0, 1, 500)
+    with rc_context(BIG_FONTS):
+        fig, axes = subplots(1, len(stages), figsize=(18, 5), sharey=True)
+        for ax, (B, fit) in zip(axes, stages.items()):
+            ax.plot(data.x, data.y, 'o', color=CLASS_COLORS[1], ms=5, alpha=0.6)
+            ax.plot(grid, _boosting_truth(grid), 'k--', lw=2, label='true curve')
+            ax.plot(grid, fit, color=CURVE_COLORS['test error'], lw=3, label='boosted fit')
+            trees = 'tree' if B == 1 else 'trees'
+            ax.set_title(f'{B:,} {trees}')
+            ax.set_xlabel('x')
+        axes[0].set_ylabel('y')
+        axes[0].legend(loc='upper left')
+        fig.tight_layout()
+    return fig
 
 
 # --- NB3: preparing real data ---------------------------------------------------------
