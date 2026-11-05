@@ -1,9 +1,8 @@
 """Simulation, plotting, and widget helpers for the Chapters 6 and 8 notebooks.
 
-ch_6_and_8_01_trees_and_regularization.ipynb, ch_6_and_8_02_ensembles.ipynb, and
-ch_6_and_8_03_preparing_real_data.ipynb use this module. The ridge/lasso helpers are
-kept for the held ridge/lasso notebook in instructor/monday_ridge_lasso_holding/. The notebooks stay
-focused on ideas; the simulation, matplotlib, and ipywidgets details live here.
+ch_6_and_8_01_trees_and_regularization.ipynb and ch_6_and_8_02_ensembles.ipynb use this
+module. The ridge/lasso helpers are kept for the held ridge/lasso notebook in
+instructor/monday_ridge_lasso_holding/. The notebooks stay focused on ideas; the simulation, matplotlib, and ipywidgets details live here.
 
 The simulated data, its Bayes boundary, the colors, and the figure sizing are
 copied from ch_5_demos_helpers.py (not imported), so this folder works on its own,
@@ -30,7 +29,6 @@ from scipy.stats import multivariate_normal
 from sklearn.ensemble import BaggingClassifier
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import Lasso, Ridge
-from sklearn.metrics import precision_score, recall_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, plot_tree
@@ -1516,60 +1514,5 @@ def plot_boosting_stages(data, stages):
             ax.set_xlabel('x')
         axes[0].set_ylabel('y')
         axes[0].legend(loc='upper left')
-        fig.tight_layout()
-    return fig
-
-
-# --- NB3: preparing real data ---------------------------------------------------------
-
-def plot_capital_gain(values):
-    """NB3 §3: a histogram of the nonzero capital-gain values, with 99,999 marked."""
-    nonzero = values[values > 0]
-    with rc_context(BIG_FONTS):
-        fig, ax = subplots(figsize=(12, 5.5))
-        ax.hist(nonzero, bins=np.arange(0, 102_000, 2_000), color=CLASS_COLORS[1], ec='white')
-        ax.set_yscale('log')
-        n_code = int(np.sum(values == 99_999))
-        ax.annotate(f'{n_code} people at exactly 99,999', (99_999, n_code),
-                    xytext=(-260, 40), textcoords='offset points', fontsize=14,
-                    arrowprops=dict(arrowstyle='->', lw=1.5))
-        ax.set_xlabel('capital-gain (dollars)')
-        ax.set_ylabel('number of people (log scale)')
-        ax.set_title(f'capital-gain for the {len(nonzero):,} people with a nonzero value')
-        fig.tight_layout()
-    return fig
-
-
-def plot_threshold_tradeoff(y_true, probability, marked=(0.5,)):
-    """NB3 §7: recall and precision of the positive class for every decision threshold,
-    from predicted probabilities. Vertical lines mark the thresholds in `marked`."""
-    thresholds = np.linspace(0.05, 0.95, 91)
-    recall = [recall_score(y_true, probability >= t) for t in thresholds]
-    precision = [precision_score(y_true, probability >= t, zero_division=0) for t in thresholds]
-    with rc_context(BIG_FONTS):
-        fig, ax = subplots(figsize=(11, 6))
-        ax.plot(thresholds, recall, lw=3, color=CURVE_COLORS['training error'], label='recall')
-        ax.plot(thresholds, precision, lw=3, color=CURVE_COLORS['test error'], label='precision')
-        for t in marked:
-            ax.axvline(t, color='black', ls='--', lw=1.5)
-            ax.text(t + 0.01, 0.03, f'threshold {t:g}', ha='left', va='bottom', fontsize=13)
-        ax.set_xlabel('decision threshold: predict ">50K" when the probability is at least this')
-        ax.set_ylabel('share')
-        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
-        ax.set_ylim(0, 1.08)
-        ax.legend(loc='center left')
-        ax.set_title('Moving the threshold trades recall for precision')
-        fig.tight_layout()
-    return fig
-
-
-def plot_importances(importances, names, top=10):
-    """NB3 §8: the `top` largest feature importances as a horizontal bar chart."""
-    order = np.argsort(importances)[::-1][:top][::-1]
-    with rc_context(BIG_FONTS):
-        fig, ax = subplots(figsize=(11, 0.5 * top + 1.5))
-        ax.barh([names[i] for i in order], importances[order], color=CLASS_COLORS[1])
-        ax.set_xlabel('importance (share of the total drop in Gini impurity)')
-        ax.set_title(f'The tree\'s {top} most important features')
         fig.tight_layout()
     return fig
