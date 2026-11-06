@@ -6,7 +6,7 @@ Starter files for the Kaggle Programming Project. The project instructions and r
 
 | Folder | Contents |
 | --- | --- |
-| `Checkpoint_1/` | `checkpoint1.ipynb`, a skeleton for Checkpoint 1; `log.md`, a template for your experiment log; and `checkpoint_1_guidance.ipynb`, a reference notebook that walks through every Checkpoint 1 step on a different data set (it needs `checkpoint_1_helpers.py` in the same folder, and an internet connection the first time you run it, to download its data) |
+| `Checkpoint_1/` | `checkpoint1.ipynb`, a skeleton for Checkpoint 1; `log.md`, a template for your experiment log; and `checkpoint_1_guidance.ipynb`, a reference notebook that works through reading a raw file, missing values, outliers, encoding, a pipeline, and cross-validation on a different data set (it needs `checkpoint_1_helpers.py` in the same folder, and an internet connection the first time you run it, to download its data) |
 
 ## How to use it
 
