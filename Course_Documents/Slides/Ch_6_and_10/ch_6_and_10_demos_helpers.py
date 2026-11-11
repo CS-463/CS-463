@@ -1538,9 +1538,9 @@ def plot_network_diagram():
              'h2': (6.4, 1.2, r'$g(z^{(1)}_2)$', '', 'unit'),
              'one_b': (6.4, -1.4, '1', '', 'bias'),
              'out': (11.6, 3.1, r'$g(z^{(2)})$', '', 'unit')}
-    edges = [('x1', 'h1', r'$w^{(1)}_{11}$', 0.24), ('x2', 'h1', r'$w^{(1)}_{21}$', 0.3),
+    edges = [('x1', 'h1', r'$w^{(1)}_{11}$', 0.24), ('x2', 'h1', r'$w^{(1)}_{12}$', 0.3),
              ('one_a', 'h1', r'$b^{(1)}_1$', 0.24),
-             ('x1', 'h2', r'$w^{(1)}_{12}$', 0.17), ('x2', 'h2', r'$w^{(1)}_{22}$', 0.32),
+             ('x1', 'h2', r'$w^{(1)}_{21}$', 0.17), ('x2', 'h2', r'$w^{(1)}_{22}$', 0.32),
              ('one_a', 'h2', r'$b^{(1)}_2$', 0.24),
              ('h1', 'out', r'$w^{(2)}_1$', 0.5), ('h2', 'out', r'$w^{(2)}_2$', 0.5),
              ('one_b', 'out', r'$b^{(2)}$', 0.5)]
@@ -1551,9 +1551,9 @@ def plot_network_diagram():
                     arrowprops=dict(arrowstyle='-|>', lw=1.8, color='0.35', mutation_scale=18))
         ax.text(14.05, 3.1, 'output', va='center', fontsize=16)
         formulas = ((6.4, 5.0 + R + 0.15, 'bottom',
-                     r'$z^{(1)}_1 = w^{(1)}_{11}x_1 + w^{(1)}_{21}x_2 + b^{(1)}_1$'),
+                     r'$z^{(1)}_1 = w^{(1)}_{11}x_1 + w^{(1)}_{12}x_2 + b^{(1)}_1$'),
                     (6.4, 1.2 - R - 0.15, 'top',
-                     r'$z^{(1)}_2 = w^{(1)}_{12}x_1 + w^{(1)}_{22}x_2 + b^{(1)}_2$'),
+                     r'$z^{(1)}_2 = w^{(1)}_{21}x_1 + w^{(1)}_{22}x_2 + b^{(1)}_2$'),
                     (11.6, 3.1 + R + 0.15, 'bottom',
                      r'$z^{(2)} = w^{(2)}_1 h_1 + w^{(2)}_2 h_2 + b^{(2)}$'))
         for x0, y0, va, text in formulas:
@@ -1565,8 +1565,8 @@ def plot_network_diagram():
         for name, label, dy in (('h1', r'$h_1$', 0.25), ('h2', r'$h_2$', -0.75)):
             x0, y0 = nodes[name][:2]
             ax.text(x0 + R + 0.15, y0 + dy, label, fontsize=19, color=SUM_COLOR)
-        ax.text(6.4, -2.6, r'$w^{(\ell)}_{jk}$: in layer $\ell$, the weight from input $j$ '
-                r'into unit $k$.     $h_k = g(z^{(1)}_k)$: hidden unit $k$’s output',
+        ax.text(6.4, -2.6, r'$w^{(\ell)}_{kj}$: in layer $\ell$, the weight into unit $k$ '
+                r'from input $j$.     $h_k = g(z^{(1)}_k)$: hidden unit $k$’s output',
                 ha='center', fontsize=14, color='0.3')
         ax.set_xlim(0.0, 15.4)
         ax.set_ylim(-3.0, 7.5)
@@ -2103,43 +2103,89 @@ def _strip_arrow(fig, gs_thumb, gs_arrow, preset, caption, labels=None):
     ax.axis('off')
 
 
+LEVEL_S = (0.0, 0.5, 1.0, 1.5, 2.0)        # row 1: lines x1 + x2 = s
+LEVEL_Z2 = (-1.5, -1.0, -0.5, 0.0, 0.5)    # row 2: lines z2 = const
+LEVEL_COLOR = '0.45'
+
+
+def _dot_pile(ax, values, y, size=22, width=0.18):
+    """A 1D dot plot: points stacked in small piles at their values (no vertical axis)."""
+    order = np.argsort(values, kind='stable')
+    values, y = values[order], y[order]
+    pos = np.zeros((len(values), 2))
+    for v in np.unique(np.round(values, 6)):
+        idx = np.where(np.isclose(values, v))[0]
+        cols = 6
+        for n_, k in enumerate(idx):
+            pos[k] = (v + (n_ % cols - (cols - 1) / 2) * width / cols, 0.12 + 0.11 * (n_ // cols))
+    _points(ax, pos, y, size=size)
+
+
 def plot_forward_strip():
     """The whole forward pass, one row per layer. Panels are spaces; between them, arrows with
     a network thumbnail above each show which part of the network turns one space into the
     next. Row 1, the hidden layer: feature space -> z1-space -> h-space. Row 2, the output
-    unit: h-space -> the number line of z2 -> the predictions."""
+    unit: h-space -> the number line of z2 -> the predictions. Dashed level lines in each
+    row's input space are the lines a weighted sum collapses to single points; their labels
+    match the labeled points in the next panel."""
     from matplotlib.gridspec import GridSpec
     X, y = xor_data()
     Z1 = np.column_stack([X @ w + b for w, b in XOR_UNITS])
     H = _jittered_hidden(X)
     with rc_context(BIG_FONTS):
-        fig = figure(figsize=(21, 13.5))
-        gs = GridSpec(4, 5, height_ratios=[1.2, 2.5, 1.2, 2.5], width_ratios=[3, 1.9, 3, 1.9, 3],
+        fig = figure(figsize=(21, 14))
+        gs = GridSpec(4, 5, height_ratios=[1.2, 2.6, 1.2, 2.6], width_ratios=[3, 1.9, 3, 1.9, 3],
                       figure=fig)
         for row, text in ((0, 'Row 1:\nthe hidden layer'), (2, 'Row 2:\nthe output unit')):
             label = fig.add_subplot(gs[row, 0])
             label.text(0.0, 0.5, text, fontsize=19, fontweight='bold', va='center',
                        transform=label.transAxes)
             label.axis('off')
-        _strip_arrow(fig, gs[0, 1], gs[1, 1], 'hidden_sum', 'weighted sums:\n$z^{(1)}_1$ and $z^{(1)}_2$',
+        _strip_arrow(fig, gs[0, 1], gs[1, 1], 'hidden_sum',
+                     r'$\mathbf{z}^{(1)} = W^{(1)}\mathbf{x} + \mathbf{b}^{(1)}$' + '\n'
+                     'linear: 2D → 2D\n(here it flattens the\nplane onto a line)',
                      labels={'h1': r'$z^{(1)}_1$', 'h2': r'$z^{(1)}_2$'})
-        _strip_arrow(fig, gs[0, 3], gs[1, 3], 'hidden_act', 'activations:\n$h_k = $ step$(z^{(1)}_k)$')
-        _strip_arrow(fig, gs[2, 1], gs[3, 1], 'sum', 'weighted sum:\n$z^{(2)}$',
+        _strip_arrow(fig, gs[0, 3], gs[1, 3], 'hidden_act',
+                     r'$\mathbf{h} = \mathrm{step}(\mathbf{z}^{(1)})$' + '\n'
+                     'nonlinear: snaps\npoints to corners')
+        _strip_arrow(fig, gs[2, 1], gs[3, 1], 'sum',
+                     r'$z^{(2)} = \mathbf{w}^{(2)}\cdot\mathbf{h} + b^{(2)}$' + '\n'
+                     'linear: 2D → 1D\n(flattens the plane\nonto a line)',
                      labels={'out': r'$z^{(2)}$'})
-        _strip_arrow(fig, gs[2, 3], gs[3, 3], 'act', 'activation:\ncut at 0',
+        _strip_arrow(fig, gs[2, 3], gs[3, 3], 'act',
+                     r'$\mathrm{out} = \mathrm{step}(z^{(2)})$' + '\n'
+                     'nonlinear: snaps\npoints to 0 or 1',
                      labels={'out': 'out'})
 
+        # Row 1, feature space: level lines x1 + x2 = s
         a = fig.add_subplot(gs[1, 0])
+        t = np.array(XOR_LIM)
+        for s_ in LEVEL_S:
+            a.plot(t, s_ - t, color=LEVEL_COLOR, lw=1.3, ls=(0, (4, 3)), zorder=1)
+            # label where the line meets the bottom edge, or else the right edge
+            xl, yl = ((s_ + 0.42, -0.42) if s_ + 0.5 < 1.45 else (1.42, s_ - 1.42))
+            a.text(xl, yl, f'{s_:g}', fontsize=12, color='0.2', ha='center', va='center',
+                   bbox=dict(boxstyle='round,pad=0.12', facecolor='white', edgecolor='none'),
+                   zorder=2)
         _points(a, X, y, size=30)
         _data_axes(a, XOR_LIM, XOR_LIM)
         a.set_xticks([0, 1])
         a.set_yticks([0, 1])
-        a.set_title('feature space: $(x_1, x_2)$', fontsize=15)
+        a.set_title('feature space: $(x_1, x_2)$\ndashed: $x_1 + x_2 = $ 0, 0.5, 1, 1.5, 2',
+                    fontsize=14)
 
+        # Row 1, z1-space: the matching points on the diagonal
         b = fig.add_subplot(gs[1, 2])
         b.axvline(0, lw=2, **HIDDEN_LINE[0])
         b.axhline(0, lw=2, **HIDDEN_LINE[1])
+        tt = np.array([-1.3, 2.3])
+        b.plot(tt, tt - 1, color=LEVEL_COLOR, lw=1.2, zorder=1)
         _points(b, Z1, y, size=30)
+        for s_ in LEVEL_S:
+            p = (s_ - 0.5, s_ - 1.5)
+            b.plot(*p, 'D', ms=8, color='white', mec='0.2', mew=1.6, zorder=6)
+            b.annotate(f'{s_:g}', p, xytext=(-14, 6), textcoords='offset points', fontsize=12,
+                       color='0.2', ha='right')
         b.set_xlim(-1.2, 2.2)
         b.set_ylim(-2.2, 1.2)
         b.set_aspect('equal')
@@ -2147,37 +2193,73 @@ def plot_forward_strip():
         b.set_ylabel('$z^{(1)}_2$')
         b.text(0.06, -2.1, '$h_1$ switches', fontsize=12, color='0.2')
         b.text(1.15, 0.08, '$h_2$ switches', fontsize=12, color='0.2')
-        b.set_title('$z^{(1)}$-space: $(z^{(1)}_1, z^{(1)}_2)$', fontsize=15)
+        b.set_title('$z^{(1)}$-space: $(z^{(1)}_1, z^{(1)}_2)$\n'
+                    '◇: where each dashed line lands', fontsize=14)
 
+        # Row 1, h-space (no line) and row 2, h-space (level lines of z2)
         for k, spot in enumerate((gs[1, 4], gs[3, 0])):
             c = fig.add_subplot(spot)
+            if k == 1:
+                tl = np.array(H_LIM)
+                for v in LEVEL_Z2:
+                    c.plot(tl, tl - 0.5 - v, color=LEVEL_COLOR, lw=1.3, ls=(0, (4, 3)), zorder=1)
+                    xl = {-1.5: 0.0, -1.0: 0.18, -0.5: 0.45, 0.0: 0.80, 0.5: 0.87}[v]
+                    c.text(xl, xl - 0.5 - v, f'{v:+g}' if v else '0', fontsize=12, color='0.2', ha='center',
+                           va='center', zorder=2,
+                           bbox=dict(boxstyle='round,pad=0.12', facecolor='white', edgecolor='none'))
             _points(c, H, y, size=30)
             _hspace_axes(c)
             c.set_xlabel('$h_1$')
             c.set_ylabel('$h_2$')
-            c.set_title('h-space: $(h_1, h_2)$', fontsize=15)
-            if k == 1:                             # row 2: the output unit's line
-                t = np.array(H_LIM)
-                c.plot(t, t - 0.5, color='black', lw=2.5)
+            c.set_title('h-space: $(h_1, h_2)$' + ('' if k == 0 else
+                        '\ndashed: $z^{(2)} = h_1 - h_2 - 0.5$ is constant'), fontsize=14)
 
+        # Row 2, the number line of z2: points sit right on the line, in tight clusters
         d = fig.add_subplot(gs[3, 2])
-        _number_line(d, 'step', cut=False, size=30)
-        d.set_title('number line: $z^{(2)}$', fontsize=15)
+        z2 = _xor_output(_xor_hidden(X, 'step'))
+        rng = np.random.default_rng(4)
+        d.axhline(0, color='0.2', lw=1.5, zorder=1)
+        for v in LEVEL_Z2:
+            d.plot([v, v], [-0.03, 0.03], color='0.2', lw=1.5, zorder=1)
+        d.axvline(0, lw=2, zorder=0.5, **HIDDEN_LINE[0])
+        d.text(0.04, 0.42, 'out switches', fontsize=12, color='0.2')
+        _points(d, np.column_stack([z2 + rng.normal(0, 0.025, len(z2)),
+                                    rng.normal(0, 0.012, len(z2))]), y, size=30)
+        d.set_xlim(-1.8, 0.9)
+        d.set_ylim(-0.5, 0.5)
+        d.set_xticks([-1.5, -1.0, -0.5, 0, 0.5])
+        d.set_xticklabels(['−1.5', '−1', '−0.5', '0', '0.5'])
+        d.tick_params(axis='x', pad=14)
+        for label in d.get_xticklabels():
+            label.set_bbox(dict(boxstyle='round,pad=0.1', facecolor='white', edgecolor='none'))
+        d.set_yticks([])
+        for side in ('left', 'right', 'top'):
+            d.spines[side].set_visible(False)
+        d.spines['bottom'].set_position(('data', 0))
+        d.set_xlabel('$z^{(2)}$')
+        d.set_title('number line: $z^{(2)}$ (one dimension)\n'
+                    'each dashed line lands on its tick', fontsize=14)
 
+        # Row 2, the output unit's activation: a number line with only two values, 0 and 1
         e = fig.add_subplot(gs[3, 4])
-        pred = (_xor_output(_xor_hidden(X, 'step')) > 0).astype(float)
-        rng = np.random.default_rng(3)
-        e.axhspan(-0.5, 0.5, color=_light(ZERO_SIDE, 0.35))
-        e.axhspan(0.5, 1.5, color=_light(ONE_SIDE, 0.35))
-        _points(e, np.column_stack([rng.uniform(-0.8, 0.8, len(y)),
-                                    pred + rng.uniform(-0.25, 0.25, len(y))]), y, size=25)
-        e.set_xlim(-1, 1)
-        e.set_ylim(-0.5, 1.5)
-        e.set_xticks([])
-        e.set_yticks([0, 1])
-        e.set_ylabel('predicted class')
-        e.set_title('prediction', fontsize=15)
-        fig.subplots_adjust(left=0.04, right=0.99, top=0.97, bottom=0.04, wspace=0.08, hspace=0.3)
+        out = (z2 > 0).astype(float)
+        rng = np.random.default_rng(5)
+        e.axhline(0, color='0.2', lw=1.5, zorder=1)
+        for v in (0, 1):
+            e.plot([v, v], [-0.03, 0.03], color='0.2', lw=1.5, zorder=1)
+        _points(e, np.column_stack([out + rng.normal(0, 0.025, len(out)),
+                                    rng.normal(0, 0.012, len(out))]), y, size=30)
+        e.set_xlim(-0.6, 1.6)
+        e.set_ylim(-0.5, 0.5)
+        e.set_xticks([0, 1])
+        e.tick_params(axis='x', pad=14)
+        e.set_yticks([])
+        for side in ('left', 'right', 'top'):
+            e.spines[side].set_visible(False)
+        e.spines['bottom'].set_position(('data', 0))
+        e.set_xlabel('out')
+        e.set_title('output: out $\\in \\{0, 1\\}$\n(the predicted class)', fontsize=14)
+        fig.subplots_adjust(left=0.04, right=0.99, top=0.97, bottom=0.04, wspace=0.08, hspace=0.32)
     return fig
 
 
@@ -2379,5 +2461,80 @@ def plot_two_lines_blank():
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), ncol=1, fontsize=12,
                   frameon=False)
         ax.set_title('Two hidden units, four regions', fontsize=15)
+        fig.tight_layout()
+    return fig
+
+
+# --- Notebook 02 (v2): why X @ W.T (the transpose picture) ---------------------------------------
+
+TRANSPOSE_X = np.array([[1, 0], [0, 1], [2, 1]])
+TRANSPOSE_W = np.array([[1, 2], [-1, 1]])          # row k: hidden unit k's weights
+ROW_SHADE, COL_SHADE, CELL_SHADE = '#CFE8F7', '#FBE3B5', '#B9E3C6'
+
+
+def _draw_matrix(ax, M, x0, y0, title, row_labels=(), col_labels=(), hi_row=None, hi_col=None,
+                 hi_cell=None, symbols=None):
+    """Draw matrix M with its top-left corner at (x0, y0), one unit per cell."""
+    from matplotlib.patches import Rectangle
+    n, m = M.shape
+    for i in range(n):
+        for j in range(m):
+            face = 'white'
+            if hi_row == i:
+                face = ROW_SHADE
+            if hi_col == j:
+                face = COL_SHADE
+            if hi_cell == (i, j):
+                face = CELL_SHADE
+            ax.add_patch(Rectangle((x0 + j, y0 - i - 1), 1, 1, facecolor=face, edgecolor='0.4'))
+            ax.text(x0 + j + 0.5, y0 - i - (0.6 if symbols else 0.5), f'{M[i, j]:g}',
+                    ha='center', va='center', fontsize=17)
+            if symbols:
+                ax.text(x0 + j + 0.5, y0 - i - 0.22, symbols[i][j], ha='center', va='center',
+                        fontsize=12.5, color='0.3')
+    for i, lab in enumerate(row_labels):
+        ax.text(x0 - 0.12, y0 - i - 0.5, lab, ha='right', va='center', fontsize=12, color='0.3')
+    for j, lab in enumerate(col_labels):
+        ax.text(x0 + j + 0.5, y0 + 0.12, lab, ha='center', va='bottom', fontsize=12,
+                color='0.3', rotation=0)
+    ax.text(x0 + m / 2, y0 + 0.75, title, ha='center', va='bottom', fontsize=16,
+            fontweight='bold')
+
+
+def plot_transpose_example(row=2, col=0):
+    """Top: W and its transpose. Bottom: X @ W.T = Z, with point `row`'s row of X, unit `col`'s
+    column of W.T, and the entry they make in Z highlighted."""
+    X, W = TRANSPOSE_X, TRANSPOSE_W
+    Z = X @ W.T
+    points = [f'point {i + 1}' for i in range(len(X))]
+    units = ['unit 1', 'unit 2']
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(15, 8.4))
+        sym = [[rf'$w^{{(1)}}_{{{k + 1}{j + 1}}}$' for j in range(2)] for k in range(2)]
+        sym_t = [[sym[k][j] for k in range(2)] for j in range(2)]       # transposed symbols
+        _draw_matrix(ax, W, 1.6, 7.6, r'$W^{(1)}$', row_labels=units, hi_row=col, symbols=sym)
+        ax.annotate('', xy=(8.1, 6.6), xytext=(4.4, 6.6),
+                    arrowprops=dict(arrowstyle='-|>', lw=2.5, color='0.3', mutation_scale=22))
+        ax.text(6.25, 6.85, 'transpose:\nrows become columns', ha='center', va='bottom', fontsize=13)
+        _draw_matrix(ax, W.T, 8.8, 7.6, r'$W^{(1)\top}$', col_labels=units, hi_col=col,
+                     symbols=sym_t)
+        _draw_matrix(ax, X, 1.6, 3.6, r'$X$', row_labels=points, col_labels=('$x_1$', '$x_2$'),
+                     hi_row=row)
+        ax.text(4.2, 2.1, '×', fontsize=30, ha='center', va='center')
+        _draw_matrix(ax, W.T, 5.0, 3.6, r'$W^{(1)\top}$', col_labels=units, hi_col=col,
+                     symbols=sym_t)
+        ax.text(7.8, 2.1, '=', fontsize=30, ha='center', va='center')
+        _draw_matrix(ax, Z, 9.4, 3.6, r'$Z^{(1)}$', row_labels=points,
+                     col_labels=('$z^{(1)}_1$', '$z^{(1)}_2$'), hi_cell=(row, col))
+        x, w = X[row], W[col]
+        ax.text(7.2, -0.6,
+                f'point {row + 1}’s row · unit {col + 1}’s column:   '
+                f'({x[0]})({w[0]}) + ({x[1]})({w[1]}) = {Z[row, col]}\n'
+                f'= point {row + 1}’s score for hidden unit {col + 1}',
+                ha='center', va='top', fontsize=15)
+        ax.set_xlim(-0.3, 12.6)
+        ax.set_ylim(-2.0, 8.9)
+        ax.set_aspect('equal')
+        ax.axis('off')
         fig.tight_layout()
     return fig
