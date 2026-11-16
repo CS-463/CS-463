@@ -7,6 +7,7 @@ Get these files from this folder and keep them **in the same folder** on your co
 - `ch_6_and_10_01_ridge_and_lasso.ipynb`
 - `ch_6_and_10_01b_linear_algebra_refresher.ipynb` (a short review of vectors and dot products before the perceptron)
 - `ch_6_and_10_02_neurons_to_networks.ipynb`
+- `ch_6_and_10_02_coding_learning_check.ipynb` (Wednesday's coding Learning Check, due Wednesday, Nov 18, 11:59 PM; needs only NumPy)
 - `ch_6_and_10_demos_helpers.py` (the notebooks import their demos from this file)
 
 If you cloned the course repo, run `git pull` to get them.
