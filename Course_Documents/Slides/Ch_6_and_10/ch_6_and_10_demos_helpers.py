@@ -1,7 +1,8 @@
 """Plotting and widget helpers for this week's notebooks.
 
-ch_6_and_10_01_ridge_and_lasso.ipynb, ch_6_and_10_01b_linear_algebra_refresher.ipynb, and
-ch_6_and_10_02_neurons_to_networks.ipynb use this module. The notebook stays focused on
+ch_6_and_10_01_ridge_and_lasso.ipynb, ch_6_and_10_01b_linear_algebra_refresher.ipynb,
+ch_6_and_10_02_neurons_to_networks.ipynb, and ch_6_and_10_03_training_networks.ipynb use
+this module. The notebook stays focused on
 ideas; the matplotlib and ipywidgets details live here. The shared styling pieces
 (colors, big fonts, the figure-redraw helper) and Demos F, G, and I are adapted from
 ch_6_and_8_demos_helpers.py (not imported), so this folder works on its own, for
@@ -2536,5 +2537,362 @@ def plot_transpose_example(row=2, col=0):
         ax.set_ylim(-2.0, 8.9)
         ax.set_aspect('equal')
         ax.axis('off')
+        fig.tight_layout()
+    return fig
+
+
+# =============================================================================================
+# Notebook 3: training a network (ch_6_and_10_03_training_networks.ipynb)
+# =============================================================================================
+# These plots take the notebook's own loss function and parameter dictionaries
+# ({'W1': (2, 2), 'b1': (2,), 'W2': (1, 2), 'b2': (1,)}), so the math lives in the notebook.
+
+STUCK_COLOR = '#D55E00'           # runs that get stuck (vermillion)
+SOLVED_COLOR = '#0072B2'          # runs that reach 100% accuracy (blue)
+PATH_COLOR = '#CC79A7'            # the backprop path through the network (reddish purple)
+TRAIN_LIM = (-0.45, 1.45)         # feature-space limits for the XOR training pictures
+
+
+def _net_proba(params, P):
+    """The 2-2-1 sigmoid network's output probability for each row of P."""
+    H = _sigmoid(P @ params['W1'].T + params['b1'])
+    return _sigmoid(H @ params['W2'].T + params['b2'])[:, 0]
+
+
+def _class_cmap():
+    """Orange where p is near 0 (class 0), white at 0.5, blue where p is near 1 (class 1)."""
+    from matplotlib.colors import LinearSegmentedColormap
+    return LinearSegmentedColormap.from_list(
+        'orange_white_blue', [_light(ZERO_SIDE, 0.75), (1, 1, 1), _light(ONE_SIDE, 0.75)])
+
+
+def plot_xor_training_data(X, y):
+    """The 100-point XOR data, as in notebook 2."""
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(5.2, 5.2))
+        _points(ax, X, y)
+        _data_axes(ax, TRAIN_LIM, TRAIN_LIM)
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_yticks([0, 0.5, 1])
+        ax.set_title('XOR data: 100 points')
+        ax.legend(handles=[Line2D([], [], marker='o', ls='', color=PLUS_COLOR, label='class 1'),
+                           Line2D([], [], marker='^', ls='', color=MINUS_COLOR, label='class 0')],
+                  loc='upper center', bbox_to_anchor=(0.5, -0.14), ncol=2, frameon=False)
+        fig.tight_layout()
+    return fig
+
+
+def plot_finite_difference(loss, params, X, y, name='W1', index=(1, 0), h=0.4, span=2.0):
+    """The loss as one weight changes, the rest held fixed: the two nudged points, the line
+    through them (finite differences), and the tangent line (the true slope). h is drawn
+    large so the two points are visible; in code h is tiny."""
+    value = params[name]
+    w0 = value[index]
+
+    def loss_at(w):
+        old = value[index]
+        value[index] = w
+        out = loss(params, X, y)
+        value[index] = old
+        return out
+
+    ws = np.linspace(w0 - span, w0 + span, 200)
+    Ls = np.array([loss_at(w) for w in ws])
+    up, down, here = loss_at(w0 + h), loss_at(w0 - h), loss_at(w0)
+    secant = (up - down) / (2 * h)
+    tiny = 1e-5
+    tangent = (loss_at(w0 + tiny) - loss_at(w0 - tiny)) / (2 * tiny)
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(8.5, 6.2))
+        ax.plot(ws, Ls, color='0.2', lw=2.5, label='the loss, as this one weight changes')
+        t = np.array([w0 - 1.3, w0 + 1.3])
+        ax.plot(t, here + tangent * (t - w0), color=SUM_COLOR, lw=2, ls='--',
+                label=f'the true slope at the current weight: {tangent:.3f}')
+        ax.plot(t, down + secant * (t - (w0 - h)), color=W_COLOR, lw=2,
+                label=f'line through the two nudged points: slope {secant:.3f}')
+        ax.plot([w0 - h, w0 + h], [down, up], 'o', color=W_COLOR, ms=10, zorder=5)
+        ax.plot([w0], [here], 'o', color='0.2', ms=8, zorder=5)
+        ax.annotate('nudged down', (w0 - h, down), xytext=(-14, 10), textcoords='offset points',
+                    ha='right', color=W_COLOR)
+        ax.annotate('current weight', (w0, here), xytext=(0, -26), textcoords='offset points',
+                    ha='center', color='0.2')
+        ax.annotate('nudged up', (w0 + h, up), xytext=(12, 10), textcoords='offset points',
+                    color=W_COLOR)
+        sym = {'W1': 'w^{(1)}', 'W2': 'w^{(2)}'}.get(name, name)
+        sub = ''.join(str(i + 1) for i in index[-2:]) if name == 'W1' else str(index[-1] + 1)
+        ax.set_xlabel(rf'the weight ${sym}_{{{sub}}}$ (every other weight held fixed)')
+        ax.set_ylabel('loss')
+        ax.set_title(f'Finite differences: nudge by h = {h} in each direction (drawn large)')
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.36)
+        fig.legend(*ax.get_legend_handles_labels(), loc='lower center', ncol=1, frameon=False)
+    return fig
+
+
+def plot_backprop_path(general_loss=False):
+    """The 2-2-1 network with the path from the weight w^(1)_21 to the loss highlighted. The
+    path's five links (each edge, each sigmoid, and the loss) are numbered from the loss
+    backward. Below the network, each link's slope is listed under its kind of operation:
+    the loss, a sigmoid, or a weighted sum. The rules repeat, which is what backprop uses.
+    general_loss=True leaves the loss's local derivative as the symbol dL/dp (notebook 03 v2,
+    which plugs in log-loss later); the default shows log-loss's formula (notebook 03)."""
+    R = 0.68
+    nodes = {'x1': (0.8, 5.0, r'$x_1$', '', 'input'), 'x2': (0.8, 2.6, r'$x_2$', '', 'input'),
+             'one_a': (0.8, 0.2, '1', '', 'bias'),
+             'h1': (6.4, 5.0, r'$h_1$', '', 'unit'), 'h2': (6.4, 1.2, r'$h_2$', '', 'unit'),
+             'one_b': (6.4, -1.4, '1', '', 'bias'),
+             'out': (11.6, 3.1, r'$p$', '', 'unit')}
+    faded = '0.82'
+    edges = [('x1', 'h1', '', 0.3, faded), ('x2', 'h1', '', 0.3, faded),
+             ('one_a', 'h1', '', 0.3, faded), ('x2', 'h2', '', 0.3, faded),
+             ('one_a', 'h2', '', 0.3, faded), ('h1', 'out', '', 0.5, faded),
+             ('one_b', 'out', '', 0.5, faded),
+             ('x1', 'h2', r'$w^{(1)}_{21}$', 0.28, PATH_COLOR),
+             ('h2', 'out', r'$w^{(2)}_2$', 0.45, PATH_COLOR)]
+    marks = (('5', (4.5, 3.05)), ('4', (6.4 + R + 0.3, 0.55)), ('3', (8.6, 2.65)),
+             ('2', (11.6 + R + 0.3, 3.1 - 0.65)), ('1', (13.3, 3.55)))
+    loss_slope = (r'$\dfrac{\partial L}{\partial p}$  (depends on the loss)' if general_loss
+                  else r'$\dfrac{\partial L}{\partial p} = -\dfrac{y}{p} + \dfrac{1 - y}{1 - p}$')
+    slopes = (('1', loss_slope),
+              ('2', r'$\dfrac{\partial p}{\partial z^{(2)}} = p(1 - p)$'),
+              ('3', r'$\dfrac{\partial z^{(2)}}{\partial h_2} = w^{(2)}_2$'),
+              ('4', r'$\dfrac{\partial h_2}{\partial z^{(1)}_2} = h_2(1 - h_2)$'),
+              ('5', r'$\dfrac{\partial z^{(1)}_2}{\partial w^{(1)}_{21}} = x_1$'))
+
+    def badge(x0, y0, label):
+        ax.text(x0, y0, label, ha='center', va='center', fontsize=15, color='white',
+                fontweight='bold', zorder=6,
+                bbox=dict(boxstyle='circle,pad=0.25', facecolor=PATH_COLOR, edgecolor='none'))
+
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(14, 10.8))
+        _draw_network(ax, nodes, edges, radius=R)
+        ax.annotate('', xy=(13.9, 3.1), xytext=(11.6 + R, 3.1),
+                    arrowprops=dict(arrowstyle='-|>', lw=2.4, color=PATH_COLOR, mutation_scale=18))
+        ax.text(14.05, 3.1, 'loss $L$', va='center', fontsize=17, color=PATH_COLOR)
+        for label, (x0, y0) in marks:
+            badge(x0, y0, label)
+        groups = (('the loss', 0.9, ('1',)), ('a sigmoid', 6.0, ('2', '4')),
+                  ('a weighted sum', 10.4, ('3', '5')))   # (heading, x, links in that column)
+        text_of = dict(slopes)
+        for heading, x0, labels in groups:
+            ax.text(x0 - 0.3, -3.35, heading, ha='left', fontsize=15, fontweight='bold',
+                    color='0.3')
+            for row, label in enumerate(labels):
+                y0 = -4.25 - 1.45 * row
+                badge(x0, y0, label)
+                ax.text(x0 + 0.4, y0, text_of[label], ha='left', va='center', fontsize=17,
+                        color=PATH_COLOR)
+        ax.text(7.7, -2.65, "Each link's local derivative follows the rule for its kind of operation, "
+                'using values from the forward pass:', ha='center', fontsize=15, color='0.3')
+        for x0, text in ((0.8, 'input'), (6.4, 'hidden layer\n(sigmoid)'),
+                         (11.6, 'output\n(sigmoid)')):
+            ax.text(x0, 6.75, text, ha='center', fontsize=15, fontweight='bold')
+        ax.set_xlim(0.0, 15.4)
+        ax.set_ylim(-6.3, 7.6)
+        fig.tight_layout()
+    return fig
+
+
+def plot_error_sum():
+    """One hidden unit h_k feeding three units j = 1, 2, 3 in the next layer. Each edge carries
+    error back (dashed): the next unit's error signal times the edge's weight. The numbered
+    pieces are listed below: the three terms are added, then multiplied by h_k's sigmoid slope."""
+    R = 0.68
+    ys = (5.6, 3.1, 0.6)
+    nodes = {'h': (3.6, 3.1, r'$h_k$', '', 'unit')}
+    for j, y0 in enumerate(ys, start=1):
+        nodes[f'u{j}'] = (10.0, y0, f'$j = {j}$', '', 'unit')
+    edges = [('h', f'u{j}', rf'$w^{{(2)}}_{{{j}k}}$', 0.42, PATH_COLOR) for j in (1, 2, 3)]
+
+    def badge(x0, y0, label):
+        ax.text(x0, y0, label, ha='center', va='center', fontsize=15, color='white',
+                fontweight='bold', zorder=6,
+                bbox=dict(boxstyle='circle,pad=0.25', facecolor=PATH_COLOR, edgecolor='none'))
+
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(14, 9.0))
+        _draw_network(ax, nodes, edges, radius=R)
+        for j, y0 in enumerate(ys, start=1):       # error carried back, alongside each edge
+            hx, ux = np.array([3.6, 3.1]), np.array([10.0, y0])
+            u = (ux - hx) / np.linalg.norm(ux - hx)
+            n = np.array([u[1], -u[0]]) * 0.38    # offset to the clockwise side of the edge
+            a, b = ux - 1.15 * R * u + n, hx + 1.6 * R * u + n
+            ax.annotate('', xy=b, xytext=a,
+                        arrowprops=dict(arrowstyle='-|>', lw=1.8, ls='--', color=PATH_COLOR,
+                                        mutation_scale=15, alpha=0.7))
+            badge(*(b + 0.72 * (a - b)), str(j))   # on the dashed arrow, near unit j
+            ax.text(10.0 + R + 0.25, y0, rf'error signal $\delta^{{(2)}}_{j}$', va='center',
+                    fontsize=16, color=PATH_COLOR)
+            ax.annotate('', xy=(14.3, y0), xytext=(13.3, y0),
+                        arrowprops=dict(arrowstyle='-|>', lw=1.4, color='0.75', mutation_scale=14))
+        ax.text(14.45, 3.1, '. . . the loss', va='center', fontsize=15, color='0.55')
+        ax.annotate('', xy=(3.6 - R, 3.1), xytext=(1.2, 3.1),
+                    arrowprops=dict(arrowstyle='-|>', lw=1.4, color='0.75', mutation_scale=14))
+        ax.text(1.1, 3.1, 'inputs . . .', va='center', ha='right', fontsize=15, color='0.55')
+        badge(3.6 - R - 0.25, 3.1 - 0.75, '4')     # h_k's own sigmoid
+        for x0, text in ((3.6, 'hidden unit $k$\n(sigmoid)'), (10.0, 'the units $h_k$ feeds\n(next layer)')):
+            ax.text(x0, 7.0, text, ha='center', fontsize=15, fontweight='bold')
+        ax.text(8.2, -1.05, 'dashed: the error carried back along each edge', ha='center',
+                fontsize=14, color=PATH_COLOR, alpha=0.8)
+        ax.text(8.2, -2.0, "Hidden unit $k$'s error signal: add the error from every edge, "
+                "then multiply by its own sigmoid slope:", ha='center', fontsize=15, color='0.3')
+        y0 = -3.1
+        pieces = ((1.4, '1', r'$\delta^{(2)}_1 w^{(2)}_{1k}$'), (5.0, '2', r'$\delta^{(2)}_2 w^{(2)}_{2k}$'),
+                  (8.6, '3', r'$\delta^{(2)}_3 w^{(2)}_{3k}$'), (12.4, '4', r'$h_k(1 - h_k)$'))
+        for x0, label, text in pieces:
+            badge(x0, y0, label)
+            ax.text(x0 + 0.4, y0, text, ha='left', va='center', fontsize=18, color=PATH_COLOR)
+        for x0, sign in ((4.3, '+'), (7.9, '+'), (11.6, r'$\times$')):
+            ax.text(x0, y0, sign, ha='center', va='center', fontsize=20, color='0.3')
+        ax.text(0.75, y0, '(', ha='center', va='center', fontsize=30, color='0.3')
+        ax.text(11.15, y0, ')', ha='center', va='center', fontsize=30, color='0.3')
+        ax.set_xlim(-0.6, 16.6)
+        ax.set_ylim(-3.9, 7.8)
+        fig.tight_layout()
+    return fig
+
+
+def plot_training_run(losses, snapshots, X, y):
+    """Top: the loss at every step. Bottom: the network's probabilities over feature space
+    at a few steps. snapshots: {step: params}."""
+    steps = sorted(snapshots)
+    g1, g2, P = _grid(TRAIN_LIM, TRAIN_LIM, steps=160)
+    with rc_context(BIG_FONTS):
+        fig = figure(figsize=(4.0 * len(steps), 8.6))
+        grid = fig.add_gridspec(2, len(steps), height_ratios=[1, 1.15])
+        ax = fig.add_subplot(grid[0, :])
+        ax.plot(np.arange(len(losses)), losses, color='0.2', lw=2.2)
+        ax.axhline(np.log(2), color='0.5', ls=':', lw=1.5)
+        ax.text(len(losses) * 0.995, np.log(2) + 0.015, 'ln 2: predicting 0.5 everywhere',
+                ha='right', va='bottom', color='0.4', fontsize=12)
+        for s in steps:
+            ax.plot(s, losses[min(s, len(losses) - 1)], 'o', color=PATH_COLOR, ms=9, zorder=5)
+        ax.set_xlabel('gradient descent step')
+        ax.set_ylabel('loss')
+        ax.set_ylim(0, max(0.8, max(losses) * 1.05))
+        ax.set_title('Training: the loss at every step (dots: the snapshots below)')
+        for k, s in enumerate(steps):
+            a = fig.add_subplot(grid[1, k])
+            p = _net_proba(snapshots[s], P).reshape(g1.shape)
+            a.contourf(g1, g2, p, levels=np.linspace(0, 1, 11), cmap=_class_cmap(), vmin=0, vmax=1)
+            a.contour(g1, g2, p, levels=[0.5], colors='black', linewidths=2)
+            wrong = (_net_proba(snapshots[s], X) > 0.5) != (y == 1)
+            _points(a, X, y, wrong=wrong, size=30)
+            _data_axes(a, TRAIN_LIM, TRAIN_LIM)
+            a.set_xticks([0, 0.5, 1])
+            a.set_yticks([0, 0.5, 1])
+            a.set_title(f'step {s}: {wrong.sum()} wrong')
+            if k:
+                a.set_ylabel('')
+        fig.tight_layout()
+    return fig
+
+
+def plot_many_runs(curves, accuracies):
+    """The loss curves of several training runs from different random starting weights."""
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(10, 5.2))
+        for seed, (losses, acc) in enumerate(zip(curves, accuracies)):
+            solved = acc == 1
+            ax.plot(losses, color=SOLVED_COLOR if solved else STUCK_COLOR, lw=1.8, alpha=0.85)
+        ax.axhline(np.log(2), color='0.5', ls=':', lw=1.5)
+        ax.set_xlim(0, len(curves[0]))
+        ax.set_ylim(0, None)
+        ax.set_xlabel('gradient descent step')
+        ax.set_ylabel('loss')
+        n_solved = sum(a == 1 for a in accuracies)
+        ax.set_title(f'{len(curves)} random starts: {n_solved} solve XOR, '
+                     f'{len(curves) - n_solved} get stuck')
+        ax.legend(handles=[Line2D([], [], color=SOLVED_COLOR, lw=2, label='100% accuracy at the end'),
+                           Line2D([], [], color=STUCK_COLOR, lw=2, label='stuck'),
+                           Line2D([], [], color='0.5', ls=':', lw=1.5, label='ln 2')],
+                  loc='upper right', frameon=False)
+        fig.tight_layout()
+    return fig
+
+
+def plot_full_vs_minibatch(full_losses, mini_losses, batch_size, n):
+    """Loss per epoch for full-batch and minibatch gradient descent from the same start."""
+    with rc_context(BIG_FONTS):
+        fig, ax = subplots(figsize=(10, 5))
+        ax.plot(np.arange(1, len(full_losses) + 1), full_losses, color='0.2', lw=2.2,
+                label='full batch: 1 step per epoch')
+        ax.plot(np.arange(1, len(mini_losses) + 1), mini_losses, color=PATH_COLOR, lw=2.2,
+                label=f'minibatches of {batch_size}: {n // batch_size} steps per epoch')
+        ax.axhline(np.log(2), color='0.5', ls=':', lw=1.5)
+        ax.set_xlabel('epoch (one pass through all the data)')
+        ax.set_ylabel('loss (on all the data)')
+        ax.set_ylim(0, None)
+        ax.set_title('Same starting weights, same amount of computation per epoch')
+        ax.legend(frameon=False)
+        fig.tight_layout()
+    return fig
+
+
+def _review_logistic_data(n=60, seed=3):
+    """Made-up logistic regression data: one standardized feature, labels 0 or 1."""
+    rng = np.random.default_rng(seed)
+    x = rng.normal(size=n)
+    y = (rng.random(n) < _sigmoid(0.5 + 2.0 * x)).astype(float)
+    return x, y
+
+
+def _review_loss(b0, b1, x, y):
+    """Log-loss of logistic regression at (b0, b1); b0 and b1 may be grids."""
+    z = b0[..., None] + b1[..., None] * x
+    p = np.clip(_sigmoid(z), 1e-12, 1 - 1e-12)
+    return -np.mean(y * np.log(p) + (1 - y) * np.log(1 - p), axis=-1)
+
+
+def plot_gradient_descent_review(eta=1.0, steps=120, start=(-2.5, -1.5)):
+    """Review of Chapter 4: a logistic regression's log-loss as a surface over (beta0, beta1),
+    the same surface as a contour map, and gradient descent's path down it. The arrow at
+    the start is minus the gradient: the steepest way downhill."""
+    x, y = _review_logistic_data()
+    path = [np.array(start, dtype=float)]
+    for _ in range(steps):
+        b = path[-1]
+        p = _sigmoid(b[0] + b[1] * x)
+        grad = np.array([np.mean(p - y), np.mean((p - y) * x)])
+        path.append(b - eta * grad)
+    path = np.array(path)
+    best = path[-1]
+    for _ in range(3000):                                  # run on to find the bottom
+        p = _sigmoid(best[0] + best[1] * x)
+        best = best - eta * np.array([np.mean(p - y), np.mean((p - y) * x)])
+    g0, g1 = np.meshgrid(np.linspace(-3.2, 3.2, 120), np.linspace(-2.2, 5.0, 120))
+    L = _review_loss(g0, g1, x, y)
+    path_L = _review_loss(path[:, 0], path[:, 1], x, y)
+    p0 = _sigmoid(start[0] + start[1] * x)
+    g_start = np.array([np.mean(p0 - y), np.mean((p0 - y) * x)])
+    levels = np.quantile(L, np.linspace(0.02, 0.9, 12))
+    with rc_context(BIG_FONTS):
+        fig = figure(figsize=(15, 6.2))
+        ax3 = fig.add_subplot(1, 2, 1, projection='3d')
+        ax3.plot_surface(g0, g1, L, cmap=SURFACE_CMAP, alpha=0.75, linewidth=0, antialiased=True)
+        ax3.plot(path[:, 0], path[:, 1], path_L + 0.02, color=PATH_COLOR, lw=2.5, marker='o',
+                 ms=4, zorder=10)
+        ax3.view_init(*SURFACE_VIEW)
+        ax3.set_xlabel(r'$\beta_0$', labelpad=8)
+        ax3.set_ylabel(r'$\beta_1$', labelpad=8)
+        ax3.set_zlabel('loss', labelpad=8)
+        ax3.set_title('The loss surface: one height per choice of $(\\beta_0, \\beta_1)$')
+        ax = fig.add_subplot(1, 2, 2)
+        cs = ax.contour(g0, g1, L, levels=levels, cmap=SURFACE_CMAP)
+        ax.clabel(cs, fmt='%.2f', fontsize=10)
+        ax.plot(path[:, 0], path[:, 1], color=PATH_COLOR, lw=2.2, marker='o', ms=4,
+                label='gradient descent, one dot per step')
+        ax.plot(*best, marker='*', ms=20, color='black', ls='', label='the bottom')
+        arrow = -g_start / np.linalg.norm(g_start) * 1.3
+        ax.annotate('', xy=tuple(np.array(start) + arrow), xytext=start,
+                    arrowprops=dict(arrowstyle='-|>', lw=2.5, color=W_COLOR, mutation_scale=20))
+        ax.text(start[0] + arrow[0] + 0.1, start[1] + arrow[1] - 0.35, r'$-\nabla L$',
+                color=W_COLOR, fontsize=17)
+        ax.set_xlabel(r'$\beta_0$')
+        ax.set_ylabel(r'$\beta_1$')
+        ax.set_aspect('equal')
+        ax.set_title('Seen from above: the contour map')
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), ncol=2, frameon=False)
         fig.tight_layout()
     return fig
