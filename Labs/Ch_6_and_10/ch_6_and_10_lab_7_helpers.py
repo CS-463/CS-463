@@ -251,3 +251,82 @@ def plot_h_space(model, X, y, title=None, units=(0, 1), ax=None):
     if own_figure:
         plt.show()
     return ax
+
+
+def _layer_slots(n, symbol, show=(3, 2)):
+    """The nodes to draw for a layer of n units: a list of labels, with None marking a gap.
+    n may be a number or a symbol like 'H'; big layers show their first and last few units."""
+    first, last = show
+    if isinstance(n, int) and n <= first + last + 1:
+        return [f'${symbol}_{{{k}}}$' for k in range(1, n + 1)]
+    if not isinstance(n, int):                        # a symbol: it could be as small as 1
+        return [f'${symbol}_{{1}}$', None, f'${symbol}_{{{n}}}$']
+    top = [f'${symbol}_{{{k}}}$' for k in range(1, first + 1)]
+    bottom = [f'${symbol}_{{{k}}}$' for k in range(n - last + 1, n + 1)]
+    return top + [None] + bottom
+
+
+def plot_network_structure(n_inputs, n_hidden, n_outputs, input_note='', hidden_note='',
+                           output_labels=None, title=None):
+    """Draw a one-hidden-layer network's structure, in the style of Neurons to Networks.
+
+    n_inputs, n_hidden, n_outputs: the number of units in each layer. n_hidden may also be a
+    symbol such as 'H'. Big layers show their first and last few units, with a gap (⋮) for
+    the rest. Every drawn input connects to every drawn hidden unit, and every hidden unit to
+    every output unit: each line is one weight. The gray "1" nodes supply each layer's biases.
+    input_note, hidden_note: extra text under each layer's heading.
+    output_labels: optional text beside each output unit (e.g. the digit it stands for).
+    """
+    from matplotlib.patches import Circle
+    unit_color, input_color = GREEN, BLUE
+    light = lambda color, amount: tuple(amount * c + (1 - amount) for c in plt.matplotlib.colors.to_rgb(color))
+    gap = 0.95
+    columns = [(0.0, _layer_slots(n_inputs, 'x'), input_color, 0.25),
+               (5.0, _layer_slots(n_hidden, 'h'), unit_color, 0.3),
+               (10.0, [f'$p_{{{k}}}$' for k in range(n_outputs)] if n_outputs <= 10
+                else _layer_slots(n_outputs, 'p'), unit_color, 0.3)]
+    tallest = max(len(slots) for _, slots, _, _ in columns) + 1
+    R = 0.42
+    fig, ax = plt.subplots(figsize=(11, 0.62 * tallest + 2.6))
+    positions = []
+    for x, slots, color, amount in columns:
+        top = (tallest - 1) * gap / 2
+        ys = [top - k * gap * (tallest - 1) / max(len(slots) - 1, 1) for k in range(len(slots))]
+        positions.append([(x, y) for y, s in zip(ys, slots) if s is not None])
+        for y, s in zip(ys, slots):
+            if s is None:
+                ax.text(x, y, '⋮', ha='center', va='center', fontsize=22, color='0.35')
+            else:
+                ax.add_patch(Circle((x, y), R, facecolor=light(color, amount), edgecolor=color, lw=1.8, zorder=3))
+                ax.text(x, y, s, ha='center', va='center', fontsize=11, zorder=4)
+    bottom = min(y for col in positions for _, y in col)
+    bias = [(0.0, bottom - 1.3 * gap), (5.0, bottom - 1.3 * gap)]
+    for (bx, by), sources, targets in ((bias[0], positions[0], positions[1]), (bias[1], positions[1], positions[2])):
+        for (xa, ya) in sources:
+            for (xb, yb) in targets:
+                ax.plot([xa + R, xb - R], [ya, yb], color='0.55', lw=0.6, alpha=0.6, zorder=1)
+        for (xb, yb) in targets:
+            ax.plot([bx + R, xb - R], [by, yb], color='0.65', lw=0.6, ls=(0, (3, 3)), zorder=1)
+        ax.add_patch(Circle((bx, by), R, facecolor=light('0.45', 0.15), edgecolor='0.45', lw=1.8, zorder=3))
+        ax.text(bx, by, '1', ha='center', va='center', fontsize=12, zorder=4)
+    if output_labels is not None:
+        for (x, y), text in zip(positions[2], output_labels):
+            ax.text(x + R + 0.2, y, text, ha='left', va='center', fontsize=11)
+    count = lambda n: f'{n:,}' if isinstance(n, int) else n
+    headings = ((0.0, f'input layer\n{count(n_inputs)} inputs', input_note),
+                (5.0, f'hidden layer\n{count(n_hidden)} units', hidden_note),
+                (10.0, f'output layer\n{count(n_outputs)} units', ''))
+    top = (tallest - 1) * gap / 2
+    for x, head, note in headings:
+        ax.text(x, top + 1.05, head, ha='center', va='bottom', fontsize=13, fontweight='bold')
+        if note:
+            ax.text(x, top + 0.6, note, ha='center', va='bottom', fontsize=10.5, color='0.3')
+    ax.text(5.0, bias[0][1] - 0.85, 'Each solid line is one weight; each dashed line from a "1" is one bias.',
+            ha='center', fontsize=10.5, color='0.3')
+    ax.set_xlim(-1.4, 12.6)
+    ax.set_ylim(bias[0][1] - 1.2, top + 2.2)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    if title:
+        ax.set_title(title, fontsize=14)
+    plt.show()
