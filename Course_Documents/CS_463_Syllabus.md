@@ -28,18 +28,17 @@
 | 4 | Oct 12, 14, 16 | Bayes; gradient descent | §4.4–4.5; §10.7 (opening) | Lab 3 — Gradient descent<br>**Perspectives 3 due Mon Oct 12** |  |
 | 5 | Oct 19, 21, 23 | Cross-Validation; Bootstrap | Ch. 5 | Lab 4 — Cross-validation and the bootstrap<br>**Perspectives 4 due Mon Oct 19** |  **Kaggle Programming Project released** |
 | 6 | Oct 26, 28 | Midterm review | — | — | **Midterm — Wed Oct 28**; no class Fri Oct 30 |
-| 7 | Nov 2, 4, 6 | Trees; regularization (pruning, ridge, lasso); ensembles | §8.1–8.2.3; §6.2 | Lab 5 — Trees, regularization, and ensembles (includes PyTorch setup)<br>**Perspectives 5 due Mon Nov 2** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
-| 8 | Nov 9, 13 | From perceptrons to neural networks | §10.1–10.2 | Lab 6 — A neuron from scratch | **No class Wed Nov 11** (Veterans Day) |
-| 9 | Nov 16, 18, 20 | Training neural networks: backpropagation, gradient descent at scale, PyTorch, regularizing networks | §10.6–10.7 | Lab 7 — Train and diagnose a network<br>**Perspectives 6 due Mon Nov 16** |  **Kaggle Programming Project checkpoint 2** |
-| 10 | Nov 23 | Embeddings and next-token prediction | §10.4–10.5.1 (instructor to confirm) | — | Monday only; **no class Nov 25, 27** (Thanksgiving) |
-| 11 | Nov 30, Dec 2, 4 | TBD (Mon); tour of large language models (Wed) | TBD | — | **Kaggle Programming Project due Wed Dec 2**; **project defenses Fri Dec 4** |
+| 7 | Nov 2, 4, 6 | Trees; pruning; ensembles | §8.1–8.2.3 | Lab 5 — Trees, regularization, and ensembles<br>**Perspectives 5 due Mon Nov 2** | **Kaggle Programming Project checkpoint 1**; midterm returned by Nov 4 |
+| 8 | Nov 9, 13 | Ridge and lasso; from neurons to neural networks | §6.2; §10.1–10.2 | Lab 6 — Vectors, lines, and matrices | **No class Wed Nov 11** (Veterans Day) |
+| 9 | Nov 16, 18, 20 | Neural networks: the forward pass in matrix form (Mon); training a network: the loss, backpropagation, minibatch gradient descent (Wed) | §10.1–10.2; §10.7–10.7.2 | Lab 7 — Train and diagnose a network (scikit-learn's `MLPClassifier`)<br>**Perspectives 6 due Mon Nov 16** | Coding Learning Check due Wed Nov 18; **Kaggle Programming Project final instructions released** |
+| 10 | Nov 23 | Regularizing networks: early stopping, weight decay, dropout | §10.7.2–10.7.4 | — | Monday only; **no class Nov 25, 27** (Thanksgiving) |
+| 11 | Nov 30, Dec 2, 4 | Embeddings and next-token prediction (Mon); tour of large language models, with a pretrained-model demo (Wed); final exam review (Fri) | §10.4–10.5.1 (instructor to confirm) | — | **Kaggle Programming Project due Wed Dec 2** |
 | — | Wed Dec 9 | **Final exam** (cumulative) | | | Finals week |
 
 ## Calendar Notes
 
 - The midterm is returned by **Nov 4**, so you'll have graded feedback in hand well before the withdrawal deadline.
 - **Week 11 Wednesday** is an exposure session on large language models. No final exam question drawn from *that session* will count against you.
-- **Kaggle Programming Project defenses** are individual conversations about your own project, scheduled during the Dec 4 session.
 
 
 # Grading
@@ -102,7 +101,7 @@ Labs are released Friday morning and are due the following **Monday at 8:30 AM**
 
 Exceptions are made for illness and other extenuating circumstances, in accordance with the college's policies. If you anticipate missing a lab deadline, send me a message as soon as possible, ideally before the deadline passes.
 
-AI-coding assistants are allowed for working on labs. You're going to talk about your labs in detail and often. If you find that you can't explain your code, methods, interpretations, etc, this might mean that you're leaning on AI too much. Ask me for advice on how to improve your approach. Remember, you're preparing for your Kaggle Programming Project oral defense every time you complete a lab and discuss it with me or your peers.
+AI-coding assistants are allowed for working on labs. You're going to talk about your labs in detail and often. If you find that you can't explain your code, methods, interpretations, etc, this might mean that you're leaning on AI too much. Ask me for advice on how to improve your approach.
 
 ---
 
@@ -128,24 +127,16 @@ You'll submit predictions to Kaggle throughout the quarter and see how your mode
 
 | Component | Share of project grade |
 |---|---|
-| Checkpoint 1 | 10% |
-| Checkpoint 2 | 10% |
-| Submission | 40% |
-| Oral Defense | 40% |
+| Checkpoint 1 | 15% |
+| Final Submission | 85% |
 
-**Checkpoints — 20%.** Two checkpoints spread across the quarter, each released with at least two weeks of lead time. Checkpoints ensure that you're on track to finish the project on time.
+**Checkpoint 1 — 15%.** A clean, honest baseline: from the raw data to a first Kaggle submission, validated with cross-validation.
 
-**Submission — 40%.** Your completed work: notebook(s), helper functions, `README.md`, and anything else you produced. Detailed requirements are in the project instructions on Canvas.
-
-**Oral Defense — 40%.** In the age of LLMs, it is incredibly easy to submit working code, having learned almost nothing. The oral defense is a one-on-one conversation at the end of the quarter about your project, your choices, and your analysis, scheduled during the Dec 4 session. I'll provide practice opportunities throughout the quarter and guidance on how to prepare. Don't be intimidated by the term "defense": there won't be any gotchas, but you're taking a real risk if you don't prepare.
-
-**The defense follows the same make-up rule as the exams.** Rescheduling happens only in the case of a serious emergency, requires that you contact me before your scheduled slot, and requires the same kind of documentation. Travel plans and schedule convenience are not grounds for rescheduling.
+**Final Submission — 85%.** Your completed work: the final notebook, any helper files it imports, and your experiment log. It compares model families fairly, tunes and engineers features with cross-validation evidence, and explains the results. Detailed requirements are in the project instructions on Canvas and in `Course_Documents/Grading_Rubrics.md`, released in Week 10 and due Wednesday, December 2.
 
 ### On AI tools
 
-You may use any coding assistant you like on this project. 
-
-Remember, in the oral defense, I will ask you to explain your own work, in person, out loud. I'll ask you some additional questions about your project, too. If you understand what you built, and you've practiced coding with the relevant libraries, etc, the defense will be straightforward. 
+You may use any coding assistant you like on this project. Your final notebook's write-up includes a short statement of which tools you used and what for. The project is where you practice the course's ideas, so make sure you understand every choice in it: the final exam asks about the same ideas.
 
 ---
 

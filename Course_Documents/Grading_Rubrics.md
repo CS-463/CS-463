@@ -89,7 +89,7 @@ AI coding assistants are allowed on labs. When you use them, you're balancing tw
 
 **Exception: plotting.** Crafting plotting code can be tedious and isn't the main point of the labs. If you're short on time, go ahead and get direct LLM help writing your graphs, plots, and charts. You should scrutinize this generated code and make sure you understand it.
 
-**The test:** You'll discuss your labs in detail with me and your classmates. That's practice for your Kaggle Programming Project oral defense. If you can't explain your code, methods, or interpretations, you're probably leaning on AI too much. Ask me for advice on adjusting your approach.
+**The test:** You'll discuss your labs in detail with me and your classmates. If you can't explain your code, methods, or interpretations, you're probably leaning on AI too much. Ask me for advice on adjusting your approach.
 
 
 ## Perspectives 
@@ -114,14 +114,12 @@ You may use LLM's to assist with your research, stress-test your ideas, explore 
 
 ## Kaggle Programming Project
 
-The project is worth 25% of your course grade, split into four parts:
+The project is worth 25% of your course grade, split into two parts:
 
 | Component | Points | Share of project |
 |---|---|---|
 | Checkpoint 1 — Baseline | 15 | 15% |
-| Checkpoint 2 — Model Comparison | 15 | 15% |
-| Submission | 50 | 50% |
-| Oral Defense | 20 | 20% |
+| Final Submission | 85 | 85% |
 | **Total** | **100** | **100%** |
 
 **Your leaderboard rank is never part of your grade.** What's graded is the quality of your process and how well you understand it. A thoughtful project at 78% accuracy beats a copied one at 81%.
@@ -133,7 +131,7 @@ The project is worth 25% of your course grade, split into four parts:
 - **Set your random seeds** (`random_state=...`) so your CV numbers are reproducible.
 - **Tune with cross-validation on `train.csv`, not the public leaderboard.** The public leaderboard only sees 30% of the test rows.
 - **Don't use the original Kaggle Spaceship Titanic data** to look up answers. That breaks the competition rules and the academic integrity policy.
-- **Keep an experiment log** from day one: a table in your README (or a `log.md`) with one row per Kaggle submission — date, model, features, CV accuracy (mean ± std), public LB accuracy. You'll build on it at every checkpoint.
+- **Keep an experiment log** from day one: a table in `log.md` (the template is in `Project/Checkpoint_1/`) with one row per Kaggle submission — date, model, features, CV accuracy (mean ± std), public LB accuracy. You'll keep it current through your final submission.
 
 ---
 
@@ -168,91 +166,37 @@ The project is worth 25% of your course grade, split into four parts:
 
 ---
 
-### Checkpoint 2 — Model Comparison (15 pts)
+### Final Submission (85 pts)
 
-**Goal:** compare model families fairly, improve your features deliberately, and practice explaining your work out loud.
+**Goal:** turn your Checkpoint 1 baseline into a finished project. Compare model families fairly, tune one setting, engineer a feature, and explain what you found, with cross-validation evidence for every choice.
 
-**Submit in Canvas:** `checkpoint2.ipynb`, your helper files, and a draft `README.md`.
+**Start from** `Project/Final/final.ipynb`, a skeleton like Checkpoint 1's, and its reference notebook, `final_guidance.ipynb`. The guidance works through every step on a different data set, and its Section 1 has a ready-to-copy pipeline for each of five model families.
+
+**Submit in Canvas:** `final.ipynb`, your `log.md`, and any `.py` helper files the notebook imports. Don't submit the data files.
 
 **Requirements**
 
-1. **Compare at least three model families**, one of which is a tree ensemble (random forest or gradient boosting, from Lab 5). Use the **same CV folds** for every model. Show the results in one table: model, CV accuracy mean ± std.
-2. **Tune at least one hyperparameter with CV** and plot CV accuracy against it. Say which value you chose and why.
-3. **Engineer at least two new features.** For each, report CV accuracy with and without it, using the same model and folds. Keep features that help; note the ones that didn't.
-4. **Leakage check.** All preprocessing lives inside a `Pipeline` (or is otherwise fit only on training folds). Point to where in your code this happens.
-5. **Update your experiment log** and submit your current best model to Kaggle.
-6. **Draft README.md** with: a one-paragraph project summary, how to run your code, and your plan for the remaining two weeks.
-7. **Mini-defense (practice, we'll discuss scheduling details).** A short  breakout-room conversation with me: walk me through your current best model and answer one follow-up question. This is graded on participation only. Its purpose is to show you what the real defense feels like.
-
-**Rubric**
-
-| Criterion | Full credit | Partial credit | No credit |
-|---|---|---|---|
-| Runs cleanly (3 pts) | Runs top to bottom after Restart & Run All; all outputs visible. | Minor errors or missing outputs. | Doesn't run from a fresh kernel. |
-| Fair model comparison (5 pts) | Three families incl. a tree ensemble, same folds, one table with mean ± std; one hyperparameter tuned via CV with a plot. | Comparison present but folds differ, std missing, or tuning missing. | Fewer than two models compared. |
-| Feature engineering (3 pts) | Two or more new features, each with a with/without CV comparison. | Features added without evidence that they help. | No new features. |
-| Pipeline, log & README (3 pts) | No leakage; log current; README draft has summary, how-to-run, and plan. | One of the three is missing or incomplete. | Two or more missing. |
-| Mini-defense (1 pt) | Showed up and talked through your model. | — | Didn't participate. |
-
----
-
-### Final Submission (50 pts)
-
-**Submit in Canvas:** a single `.zip` (or a link to a GitHub repo, with the final commit before the deadline) containing:
-
-- `final.ipynb` — your end-to-end pipeline, from raw CSVs to `submission.csv`
-- any `.py` helper modules
-- `requirements.txt` (or a list of packages and versions in the README)
-- `README.md`
-- your experiment log
-
-**Your notebook must regenerate one of your two selected Kaggle submissions.** I'll run it and compare the output to the file you selected for final scoring.
-
-**README.md must include**
-
-1. **Summary** — the problem, your final model, and your CV accuracy, in one paragraph.
-2. **How to run** — exact steps from a fresh clone.
-3. **Results table** — every model family you tried, with CV mean ± std, and your final public and private LB scores.
-4. **Final model choice** — why this model, and not the runner-up? Refer to your CV evidence, not your leaderboard rank.
-5. **What didn't work** — at least two ideas you tried and dropped, and what you learned from each.
-6. **AI-use statement** — which tools you used, for what, and one example where you caught or corrected an AI mistake.
+1. **Reproduce a submission.** Restart & Run All must write the `submission.csv` you selected for final scoring on Kaggle. I'll run it and compare the output to that file.
+2. **Start from Checkpoint 1.** Bring in your Checkpoint 1 preparation and preprocessing, revised using its feedback, and say what you changed.
+3. **Compare at least three model families**, one of which is a tree ensemble (a random forest or gradient boosting, from the *Ensembles* demo and the guidance menu). A neural network (`MLPClassifier`, from Lab 7) is a welcome choice for another. Use the **same CV folds** for every model, in one table of mean ± std and fold-by-fold accuracy (the skeleton's `compare` function makes it). Judge whether your best model's lead is real with the guidance's three questions: the gap against the spread, whether it holds in every fold, and the gap as a passenger count.
+4. **Tune one setting with CV.** Try 5–7 widely spread values, plot CV accuracy against them (the skeleton provides the plot), and say which value you chose and why.
+5. **Engineer at least one feature.** Report CV accuracy with and without it, on the same model and folds, and explain why it helped or didn't. A feature that didn't help still counts if you test it and explain the result.
+6. **Put each step in the right place.** A feature built from a row's own values, or from `X` and `X_test` without the label, goes before cross-validation; anything that learns from the training rows (imputing, scaling, encoding) goes inside the pipeline; nothing is built from the label.
+7. **Write it up.** Answer the notebook's write-up prompts: a summary, CV against the leaderboard, what didn't work, and AI use.
+8. **Keep your experiment log current**, through your last Kaggle submission.
 
 **Rubric**
 
 | Criterion | Excellent | Proficient | Developing | Missing |
 |---|---|---|---|---|
-| **Reproducibility & code quality (10 pts)** | Runs from a fresh kernel; regenerates a selected submission; seeds set; relative paths; repeated logic factored into functions. (10) | Runs and reproduces, with minor rough edges. (8) | Runs only with manual fixes, or doesn't reproduce the submission. (4) | Doesn't run. (0) |
-| **Data preparation & features (10 pts)** | Every cleaning, transformation, and feature decision is justified; engineered features are backed by with/without evidence; no leakage. (10) | Sound preparation; justification or evidence thin in places. (8) | Ad hoc preparation, or leakage present. (4) | Minimal preparation. (0) |
-| **Modeling & validation (12 pts)** | Three or more families compared on the same folds; hyperparameters tuned via CV; final choice weighs mean *and* variability; CV vs. LB gap discussed. (12) | Solid comparison; one element (tuning, variability, gap) missing. (9) | Few models, or chosen by public LB rather than CV. (5) | No meaningful validation. (0) |
-| **Analysis & interpretation (10 pts)** | Error analysis (where does the model fail?); feature importance or coefficients interpreted in plain language; honest account of what didn't work. (10) | Interpretation present but shallow in one area. (8) | Results reported with little interpretation. (4) | None. (0) |
-| **README & communication (8 pts)** | All six README sections present, clear, and accurate; plots labeled. (8) | One section missing or unclear. (6) | Several sections missing. (3) | No README. (0) |
+| **Reproducibility (15 pts)** | Runs from a fresh kernel and writes the selected submission; seeds set; relative paths. (15) | Runs and reproduces, with minor rough edges. (12) | Runs only with manual fixes, or doesn't reproduce the selected submission. (6) | Doesn't run. (0) |
+| **Features & preprocessing (20 pts)** | Checkpoint 1 feedback addressed; at least one engineered feature, with CV accuracy with and without it on the same model and folds, and a sound explanation of the result; every step in the right place (before CV, inside the pipeline, or nowhere), with no leakage. (20) | Sound work; the explanation or evidence is thin in places. (16) | A feature without with/without evidence, feedback not addressed, or leakage present. (8) | No engineered feature. (0) |
+| **Model comparison & tuning (30 pts)** | Three or more families, including a tree ensemble, on the same folds in one table; one setting tuned through CV, with the plot; choices judged with the three questions (gap against spread, fold by fold, passenger count), not the leaderboard. (30) | Solid comparison; one element (shared folds, tuning plot, or judging the gaps) missing or weak. (23) | Fewer than three families, or choices made by public leaderboard rather than CV. (12) | No meaningful validation. (0) |
+| **Write-up & log (20 pts)** | Every write-up prompt answered clearly and accurately; CV compared with the leaderboard; at least one thing that didn't work and what it taught; log current; plots labeled. (20) | One prompt thin or missing, or the log is behind. (16) | Several prompts missing. (8) | No write-up. (0) |
 
 Graders may award scores between the listed levels.
 
 ---
-
-### Oral Defense (20 pts)
-
-A one-on-one, roughly 12-minute conversation during the Dec 4 session. Bring your laptop with your notebook open and running.
-
-**How it goes**
-
-1. **Walkthrough (≈4 min).** You walk me through your pipeline, from raw data to final prediction. No slides needed; just your notebook.
-2. **Your choices (≈4 min).** I'll point at specific decisions in your code and ask why you made them, and what you'd expect to happen if you'd chosen differently.
-3. **Course concepts (≈4 min).** Questions that connect your project to the ideas from class: bias–variance, overfitting, cross-validation, regularization, why ensembles help, how your model actually makes a prediction.
-
-"I don't know, but here's how I'd find out" is a good answer. Guessing confidently is a worse one.
-
-**Rubric**
-
-| Criterion (5 pts each) | Excellent (5) | Proficient (4) | Developing (2) | Missing (0) |
-|---|---|---|---|---|
-| **Walkthrough** | Explains the whole pipeline fluently in their own words; can navigate to any part of the code on request. | Clear overall, with small gaps or some reliance on reading the code aloud. | Can describe what the code does only in general terms. | Can't explain their own pipeline. |
-| **Justifying choices** | Gives evidence-based reasons for decisions (refers to CV results, plots, the data) and names alternatives they considered. | Reasons are sensible but sometimes vague. | Reasons are mostly "it worked" or "the AI suggested it." | No reasons given. |
-| **"What if" reasoning** | Correctly predicts the effect of a proposed change (drop a feature, change *k*, remove regularization) and explains why. | Mostly correct predictions with some prompting. | Predictions are guesses without reasoning. | Can't engage. |
-| **Conceptual understanding** | Connects project to course concepts accurately and precisely, using correct vocabulary. | Mostly accurate, with minor misconceptions. | Significant misconceptions, or vocabulary without understanding. | Can't connect project to course material. |
-
-**How to prepare:** re-read your own notebook as if a classmate wrote it. For every cell, ask "why is this here, and what would break without it?" Practice explaining your final model to someone who isn't in the class.
 
 ## Midterm and Final Exams
 **Coming Soon**
